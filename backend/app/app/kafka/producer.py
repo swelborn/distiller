@@ -9,11 +9,12 @@ from app.core.constants import (TOPIC_CUSTODIAN_EVENTS,
                                 TOPIC_SCAN_EVENTS, TOPIC_SCAN_FILE_EVENTS,
                                 TOPIC_SCAN_FILE_SYNC_EVENTS,
                                 TOPIC_STATUS_FILE_EVENTS,
-                                TOPIC_STATUS_FILE_SYNC_EVENTS)
+                                TOPIC_STATUS_FILE_SYNC_EVENTS,
+                                TOPIC_JOB_CANCEL_EVENTS)
 from app.core.logging import logger
 from app.schemas import (FileSystemEvent, HaadfUploaded, MicroscopeUpdateEvent,
                          NotebookCreateEvent, ScanCreatedEvent,
-                         ScanFileUploaded, ScanUpdateEvent, SyncEvent)
+                         ScanFileUploaded, ScanUpdateEvent, SyncEvent, CancelJobEvent)
 from app.schemas.events import RemoveScanFilesEvent, SubmitJobEvent
 
 
@@ -109,6 +110,14 @@ async def send_submit_job_event_to_kafka(event: SubmitJobEvent) -> None:
     except:
         logger.exception(f"Exception send on topic: {TOPIC_JOB_EVENTS}")
 
+async def send_cancel_job_event_to_kafka(event: CancelJobEvent) -> None:
+    if producer is None:
+        raise Exception("Producer has not been initialized")
+
+    try:
+        await producer.send(TOPIC_JOB_CANCEL_EVENTS, event)
+    except:
+        logger.exception(f"Exception send on topic: {TOPIC_JOB_CANCEL_EVENTS}")
 
 async def send_remove_scan_files_event_to_kafka(event: RemoveScanFilesEvent) -> None:
     if producer is None:

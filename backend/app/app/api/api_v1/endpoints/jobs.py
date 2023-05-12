@@ -8,8 +8,9 @@ from app.api.deps import get_db, oauth2_password_bearer_or_api_key
 from app.crud import job as crud
 from app.crud import scan as scan_crud
 from app.kafka.producer import (send_scan_event_to_kafka,
-                                send_submit_job_event_to_kafka)
-from app.schemas import SubmitJobEvent
+                                send_submit_job_event_to_kafka,
+                                send_cancel_job_event_to_kafka)
+from app.schemas import SubmitJobEvent, CancelJobEvent
 from app.schemas.scan import ScanUpdateEvent
 
 router = APIRouter()
@@ -88,5 +89,25 @@ async def update_job(
     if updated:
         jobs = crud.get_jobs(db, scan_id=cast(int, job.scan_id))
         await send_scan_event_to_kafka(ScanUpdateEvent(id=job.scan_id, jobs=jobs))
+
+    return job
+
+
+@router.delete(
+    "/{id}",
+    response_model=schemas.Job,
+    dependencies=[Depends(oauth2_password_bearer_or_api_key)],
+)
+async def cancel_job(
+    id: int, db: Session = Depends(get_db)
+):
+    # Get job from database
+    db_job = crud.get_job(db, id=id)
+    if db_job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # Turn job model into job schema
+    job = schemas.Job.from_orm(db_job)
+    await send_cancel_job_event_to_kafka(CancelJobEvent(job=job))
 
     return job

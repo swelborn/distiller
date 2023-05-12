@@ -1,4 +1,4 @@
-from .events import SubmitJobEvent
+from .events import SubmitJobEvent, CancelJobEvent
 from .file import (FileSystemEvent, FileSystemEventType, HaadfUploaded,
                    ScanFileUploaded, SyncEvent)
 from .job import Job, JobCreate, JobUpdate
