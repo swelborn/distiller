@@ -1,4 +1,4 @@
-import { IdType, JobType, ScanJob } from '../../types';
+import { IdType, JobType, ScanJob, Job } from '../../types';
 import { apiClient } from '../../client';
 
 export function createJob(
@@ -18,6 +18,17 @@ export function createJob(
     .post({
       url: 'jobs',
       json: payload,
+    })
+    .then((res) => res.json());
+}
+
+export function cancelJob(
+  jobid: IdType,
+): Promise<Job> {
+
+  return apiClient
+    .delete({
+      url: 'jobs/' + jobid,
     })
     .then((res) => res.json());
 }
