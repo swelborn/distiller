@@ -320,31 +320,9 @@ async def cancel_job(machine: str, jobid: str) -> None:
     r.raise_for_status()
 
     sfapi_response = r.json()
+
     if sfapi_response["status"].lower() != "ok":
         raise SfApiError(sfapi_response["error"])
-
-    task_id = sfapi_response["task_id"]
-    
-    # We now need to poll waiting for the task to complete!
-    while True:
-        r = await sfapi_get(f"tasks/{task_id}")
-        r.raise_for_status()
-
-        sfapi_response = r.json()
-
-        if sfapi_response["status"].lower() == "error":
-            raise SfApiError(sfapi_response["error"])
-
-        logger.info(sfapi_response)
-
-        if sfapi_response.get("result") is None:
-            await asyncio.sleep(1)
-            continue
-
-        results = json.loads(sfapi_response["result"])
-
-        if results["status"].lower() == "error":
-            raise SfApiError(results["error"])
 
 async def update_slurm_job_id(
     session: aiohttp.ClientSession, job_id: int, slurm_id: int
