@@ -1,6 +1,12 @@
 from datetime import timedelta
 from enum import Enum
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, List, ForwardRef, TYPE_CHECKING
+
+Scan = ForwardRef("Scan")
+
+if TYPE_CHECKING:
+    from .scan import Scan
+
 
 from pydantic import BaseModel
 
@@ -49,7 +55,7 @@ class JobState(str, Enum):
 class Job(BaseModel):
     id: int
     job_type: JobType
-    scan_id: int
+    scans: Optional[List[Scan]]
     machine: str
     slurm_id: Optional[int]
     state: JobState = JobState.INITIALIZING
@@ -63,7 +69,7 @@ class Job(BaseModel):
 
 class JobCreate(BaseModel):
     job_type: JobType
-    scan_id: int
+    scan_id: Optional[int]
     params: Dict[str, Union[str, int, float]]
     machine: str
 
@@ -73,3 +79,9 @@ class JobUpdate(BaseModel):
     state: Optional[JobState]
     output: Optional[str]
     elapsed: Optional[timedelta]
+    scan_id: Optional[int]
+
+
+from .scan import Scan
+
+Job.update_forward_refs()

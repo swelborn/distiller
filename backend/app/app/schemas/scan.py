@@ -1,11 +1,14 @@
 import math
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, ForwardRef, TYPE_CHECKING
+
+Job = ForwardRef("Job")
+
+if TYPE_CHECKING:
+    from .job import Job
 
 from pydantic import BaseModel, Field, validator
-
-from app.schemas.job import Job
 
 
 class Location(BaseModel):
@@ -51,7 +54,7 @@ class Scan(BaseModel):
     locations: List[Location]
     image_path: Optional[str]
     notes: Optional[str]
-    jobs: List[Job]
+    jobs: Optional[List[Job]]
     metadata: Optional[Dict[str, Any]] = Field(alias="metadata_")
     microscope_id: int
     uuid: Optional[str]
@@ -95,6 +98,7 @@ class ScanUpdate(BaseModel):
     notes: Optional[str]
     image_path: Optional[str]
     metadata: Optional[Dict[str, Any]]
+    job_id: Optional[int]
 
     _metadata_infinity = validator("metadata", allow_reuse=True)(metadata_infinity)
 
@@ -130,3 +134,9 @@ class ScanUpdateEvent(ScanEvent):
     jobs: Optional[List[Job]]
     image_path: Optional[str]
     notes: Optional[str]
+
+
+from .job import Job
+
+Scan.update_forward_refs()
+ScanUpdateEvent.update_forward_refs()
