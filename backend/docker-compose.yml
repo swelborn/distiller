@@ -91,7 +91,11 @@ services:
       zoo1:
         condition: service_started
     restart: on-failure
-
+    volumes:
+      - ./app/still.sql:/tmp/still.sql
+      - ./app/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    command: ["/usr/local/bin/docker-entrypoint.sh", "postgres"]
+      
   job-worker:
     build:
       context: ./faust
