@@ -3,10 +3,8 @@ import copy
 import json
 import logging
 from datetime import datetime, timedelta
-from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
-import json
 
 import aiohttp
 import httpx
@@ -14,8 +12,8 @@ import jinja2
 import tenacity
 from aiopath import AsyncPath
 from authlib.integrations.httpx_client.oauth2_client import AsyncOAuth2Client
-from authlib.oauth2.rfc7523 import PrivateKeyJWT
 from authlib.jose import JsonWebKey
+from authlib.oauth2.rfc7523 import PrivateKeyJWT
 from dotenv import dotenv_values
 
 import faust
@@ -24,7 +22,6 @@ from constants import (COUNT_JOB_SCRIPT_TEMPLATE, DATE_DIR_FORMAT,
                        SFAPI_BASE_URL, SFAPI_TOKEN_URL, SLURM_RUNNING_STATES,
                        TOPIC_JOB_SUBMIT_EVENTS, TRANSFER_JOB_SCRIPT_TEMPLATE,
                        JobState)
-from faust_records import Scan as ScanRecord
 from faust_records import Job, JobType, SubmitJobEvent
 from schemas import JobUpdate
 from schemas import Location as LocationRest
@@ -270,7 +267,6 @@ async def update_slurm_job_id(
 async def process_submit_job_event(
     session: aiohttp.ClientSession, event: SubmitJobEvent
 ) -> None:
-
     # We need to fetch the machine specific configuration
     machine = await get_machine(session, event.job.machine)
 

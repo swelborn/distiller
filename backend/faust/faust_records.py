@@ -63,6 +63,7 @@ class ScanUpdatedEvent(faust.Record):
     notebooks: Optional[List[str]]
     event_type: str = "scan.updated"
 
+
 Job.update_forward_refs()
 Scan.update_forward_refs()
 SubmitJobEvent.update_forward_refs()
