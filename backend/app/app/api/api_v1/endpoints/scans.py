@@ -24,6 +24,7 @@ from app.crud import scan as crud
 from app.kafka.producer import (send_remove_scan_files_event_to_kafka,
                                 send_scan_event_to_kafka,
                                 send_scan_file_event_to_kafka)
+from app.crud import job as job_crud
 from app.models import Scan
 from app.schemas.events import RemoveScanFilesEvent
 from app.schemas.scan import Scan4DCreate, ScanCreatedEvent
@@ -189,6 +190,7 @@ async def create_scan(
 )
 def read_scans(
     response: Response,
+    with_jobs: bool = False,
     skip: int = 0,
     limit: int = 100,
     scan_id: int = -1,
@@ -205,6 +207,7 @@ def read_scans(
 
     scans = crud.get_scans(
         db,
+        with_jobs=with_jobs,
         skip=skip,
         limit=limit,
         scan_id=scan_id,
@@ -220,6 +223,7 @@ def read_scans(
 
     count = crud.get_scans_count(
         db,
+        with_jobs=with_jobs,
         skip=skip,
         limit=limit,
         scan_id=scan_id,
@@ -244,12 +248,17 @@ def read_scans(
     response_model_by_alias=False,
     dependencies=[Depends(oauth2_password_bearer_or_api_key)],
 )
-def read_scan(response: Response, id: int, db: Session = Depends(get_db)):
-    db_scan = crud.get_scan(db, id=id)
+def read_scan(
+    response: Response, id: int, with_jobs: bool = False, db: Session = Depends(get_db)
+):
+    db_scan = crud.get_scan(db, id=id, with_jobs=with_jobs)
     if db_scan is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Scan not found"
         )
+
+    if with_jobs:
+        db_scan.jobs = crud.get_jobs_for_scan(db, db_scan)
 
     (prev_scan, next_scan) = crud.get_prev_next_scan(db, id)
 
@@ -260,6 +269,24 @@ def read_scan(response: Response, id: int, db: Session = Depends(get_db)):
         response.headers["X-Next-Scan"] = str(next_scan)
 
     return db_scan
+
+
+@router.get(
+    "/{id}/jobs",
+    response_model=List[schemas.Job],
+    response_model_by_alias=False,
+    dependencies=[Depends(oauth2_password_bearer_or_api_key)],
+)
+def read_scan_jobs(id: int, db: Session = Depends(get_db)):
+    db_scan = crud.get_scan(db, id=id, with_jobs=True)
+    if db_scan is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Scan not found"
+        )
+
+    jobs = crud.get_jobs_for_scan(db, db_scan)
+
+    return jobs
 
 
 @router.patch(
@@ -285,6 +312,7 @@ async def update_scan(
         locations=payload.locations,
         notes=payload.notes,
         metadata=payload.metadata,
+        job_id=payload.job_id,
     )
 
     if updated:
