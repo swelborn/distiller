@@ -52,7 +52,7 @@ services:
       mkdir -p /tmp/haadf/scans/png && \
       alembic upgrade head && \
       python /app/app/cli/create_user.py --username 'distiller' --fullname 'User One' --password 'password' && \
-      /start.sh"
+      uvicorn --host 0.0.0.0 --port 80 --reload app.main:app"
     ports:
      - "8000:80"
     environment:
@@ -65,6 +65,7 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: '["kafka:19092"]'
       MACHINES: '[{"name": "perlmutter", "account": "m3795", "qos": "realtime", "nodes": 2, "ntasks": 2, "constraint": "cpu", "cpus_per_task": 128, "ntasks_per_node": 2, "bbcp_dest_dir": "/tmp/ncem"}]'
       NCEMHUB_PATH: "/tmp"
+      WATCHFILES_FORCE_POLLING: true
     depends_on:
       kafka:
         condition: service_started
@@ -74,6 +75,7 @@ services:
         condition: service_started
     volumes:
       - ./app/alembic:/app/alembic
+      - ./app/app:/app/app
     restart: on-failure
 
   postgres:
