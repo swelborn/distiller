@@ -2,22 +2,28 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from sqlalchemy import desc, or_, update
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, noload
 
 from app import models, schemas
 from app.crud import microscope
+from app.crud import job as job_crud
 
 
-def get_scan(db: Session, id: int) -> models.Scan:
-    return db.query(models.Scan).filter(models.Scan.id == id).first()
-
+def get_scan(db: Session, id: int, with_jobs: bool = False):
+    query = db.query(models.Scan)
+    if not with_jobs:
+        query = query.options(noload(models.Scan.jobs))
+    return query.filter(models.Scan.id == id).first()
 
 def get_scan_by_scan_id(db: Session, scan_id: int):
     return db.query(models.Scan).filter(models.Scan.scan_id == scan_id).first()
 
+def get_jobs_for_scan(db: Session, scan: models.Scan):
+    return [job_crud.get_job(db, job.id, with_scans=False) for job in scan.jobs]
 
 def _get_scans_query(
     db: Session,
+    with_jobs: bool = False,
     skip: int = 0,
     limit: int = 100,
     scan_id: int = -1,
@@ -31,6 +37,10 @@ def _get_scans_query(
     uuid: Optional[str] = None,
 ):
     query = db.query(models.Scan)
+
+    if not with_jobs:
+        query = query.options(noload(models.Scan.jobs))
+
     if scan_id > -1:
         query = query.filter(models.Scan.scan_id == scan_id)
 
@@ -70,6 +80,7 @@ def _get_scans_query(
 
 def get_scans(
     db: Session,
+    with_jobs: bool = False,
     skip: int = 0,
     limit: int = 100,
     scan_id: int = -1,
@@ -84,6 +95,7 @@ def get_scans(
 ):
     query = _get_scans_query(
         db,
+        with_jobs,
         skip,
         limit,
         scan_id,
@@ -102,6 +114,7 @@ def get_scans(
 
 def get_scans_count(
     db: Session,
+    with_jobs: bool = False,
     skip: int = 0,
     limit: int = 100,
     scan_id: int = -1,
@@ -116,6 +129,7 @@ def get_scans_count(
 ):
     query = _get_scans_query(
         db,
+        with_jobs,
         skip,
         limit,
         scan_id,
@@ -167,6 +181,8 @@ def update_scan(
     image_path: Optional[str] = None,
     notes: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,
+    job_id: Optional[int] = None,
+
 ):
     updated = False
 
@@ -237,9 +253,21 @@ def update_scan(
         metadata_updated = resultsproxy.rowcount == 1
         updated = updated or metadata_updated
 
+    if job_id is not None:
+        jobs_updated = False
+        scan = get_scan(db, id, with_jobs=True)
+        if scan is None:
+            raise Exception(f"Job with id {id} does not exist.")
+        if not any([job.id == job_id for job in scan.jobs]):
+            job = job_crud.get_job(db, job_id, with_scans=False)
+            scan.jobs.append(job)
+            jobs_updated = True
+
+        updated = updated or jobs_updated
+
     db.commit()
 
-    return (updated, get_scan(db, id))
+    return (updated, get_scan(db, id, with_jobs=False))
 
 
 def count(db: Session) -> int:
@@ -271,7 +299,7 @@ def get_prev_next_scan(
     db: Session, id: int
 ) -> Tuple[Union[int, None], Union[int, None]]:
     # Fetch the scan so we can constrain by microscope id
-    scan = get_scan(db, id)
+    scan = get_scan(db, id, with_jobs=False)
 
     if scan is None:
         raise Exception("Invalid scan id: {id}")
