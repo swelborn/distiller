@@ -21,4 +21,4 @@ class Scan(Base):
     )
 
     locations = relationship("Location", cascade="delete")
-    jobs = relationship("Job", secondary=scan_job_table)
+    jobs = relationship("Job", secondary=scan_job_table, back_populates="scans")

@@ -16,4 +16,4 @@ class Job(Base):
     output = Column(String, nullable=True)
     elapsed = Column(Interval, nullable=True)
     machine = Column(String, nullable=False)
-    scans = relationship("Scan", secondary=scan_job_table)
+    scans = relationship("Scan", secondary=scan_job_table, back_populates="jobs")
