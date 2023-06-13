@@ -160,9 +160,11 @@ const ScanPage: React.FC<Props> = () => {
     }
   }
 
+  let withJobs: boolean = true;
+
   useEffect(() => {
-    dispatch(getScan({ id: scanId }));
-  }, [dispatch, scanId]);
+    dispatch(getScan({ id: scanId, withJobs: withJobs  }));
+  }, [dispatch, scanId, withJobs]);
 
   useEffect(() => {
     dispatch(getNotebooks());

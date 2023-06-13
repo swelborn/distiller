@@ -226,6 +226,7 @@ const ScansPage: React.FC = () => {
     }
   }
 
+  let withJobs: boolean = false;
   useEffect(() => {
     if (microscopeId === undefined) {
       return;
@@ -233,6 +234,7 @@ const ScansPage: React.FC = () => {
 
     dispatch(
       getScans({
+        withJobs: withJobs,
         skip: page * rowsPerPage,
         limit: rowsPerPage,
         start: startDateFilter || undefined,

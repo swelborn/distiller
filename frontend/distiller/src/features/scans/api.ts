@@ -5,12 +5,16 @@ import { DateTime } from 'luxon';
 
 export function getScans(
   microscopeId: IdType,
+  withJobs?: boolean,
   skip?: number,
   limit?: number,
   start?: DateTime,
   end?: DateTime
 ): Promise<ScansRequestResult> {
   const params: any = { microscope_id: microscopeId };
+  if (withJobs !== undefined) {
+    params['with_jobs'] = withJobs;
+  }
   if (skip !== undefined) {
     params['skip'] = skip;
   }
@@ -50,10 +54,16 @@ export function getScans(
     });
 }
 
-export function getScan(id: IdType): Promise<Scan> {
+export function getScan(id: IdType, withJobs?: boolean): Promise<Scan> {
+  const params: any = {};
+  if (withJobs !== undefined) {
+    params['with_jobs'] = withJobs;
+  }
+
   return apiClient
     .get({
       url: `scans/${id}`,
+      params,
     })
     .then((res) => {
       return res.json().then((scan: Scan) => {

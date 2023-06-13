@@ -32,6 +32,7 @@ const initialState: ScansState = scansAdapter.getInitialState({
 export const getScans = createAsyncThunk<
   ScansRequestResult,
   {
+    withJobs: boolean;
     skip: number;
     limit: number;
     start?: DateTime;
@@ -39,17 +40,17 @@ export const getScans = createAsyncThunk<
     microscopeId: IdType;
   }
 >('scans/fetch', async (_payload, _thunkAPI) => {
-  const { skip, limit, start, end, microscopeId } = _payload;
-  const result = await getScansAPI(microscopeId, skip, limit, start, end);
+  const { withJobs, skip, limit, start, end, microscopeId } = _payload;
+  const result = await getScansAPI(microscopeId, withJobs, skip, limit, start, end);
 
   return result;
 });
 
-export const getScan = createAsyncThunk<Scan, { id: IdType }>(
+export const getScan = createAsyncThunk<Scan, { id: IdType, withJobs: boolean }>(
   'scan/fetch',
   async (payload, _thunkAPI) => {
-    const { id } = payload;
-    const scan = await getScanAPI(id);
+    const { id, withJobs } = payload;
+    const scan = await getScanAPI(id, withJobs);
 
     return scan;
   }
