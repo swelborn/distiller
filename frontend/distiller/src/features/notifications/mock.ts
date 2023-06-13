@@ -1,4 +1,4 @@
-import { IdType, JobState, JobType, Scan, ScanJob } from '../../types';
+import { IdType, JobState, JobType, Scan, Job } from '../../types';
 import { ScanCreatedEvent, ScanUpdatedEvent, ScanEventType } from './events';
 
 function makeCreatedEvent(id: IdType): ScanCreatedEvent {
@@ -62,7 +62,7 @@ async function mockScanUpdates(ws: WebSocket, id: IdType) {
     ws.dispatchEvent(ev);
   }
 
-  const job: ScanJob = {
+  const job: Job = {
     id: 0,
     scan_id: id,
     job_type: JobType.Count,

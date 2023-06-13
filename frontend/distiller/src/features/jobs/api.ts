@@ -1,4 +1,4 @@
-import { IdType, JobType, ScanJob } from '../../types';
+import { IdType, JobType, Job } from '../../types';
 import { apiClient } from '../../client';
 
 export function createJob(
@@ -6,7 +6,7 @@ export function createJob(
   scanId: IdType,
   machine: string,
   params: any
-): Promise<ScanJob> {
+): Promise<Job> {
   const payload = {
     job_type: type,
     scan_id: scanId,

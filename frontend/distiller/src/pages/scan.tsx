@@ -44,7 +44,7 @@ import {
 } from '../features/machines';
 import LocationComponent from '../components/location';
 import EditableField from '../components/editable-field';
-import { IdType, JobType, Scan, ScanJob, Microscope } from '../types';
+import { IdType, JobType, Scan, Job, Microscope } from '../types';
 import JobStateComponent from '../components/job-state';
 import TransferDialog from '../components/transfer-dialog';
 import CountDialog from '../components/count-dialog';
@@ -122,7 +122,7 @@ const ScanPage: React.FC<Props> = () => {
   const navigate = useNavigate();
 
   const [jobDialog, setJobDialog] = useState<JobType | undefined>();
-  const [jobOutputDialog, setJobOutputDialog] = useState<ScanJob | undefined>();
+  const [jobOutputDialog, setJobOutputDialog] = useState<Job | undefined>();
   const [scanFilesToRemove, setScanFilesToRemove] = React.useState<Scan | null>(
     null
   );
@@ -196,7 +196,7 @@ const ScanPage: React.FC<Props> = () => {
     return createJob(type, scanId, machine, params);
   };
 
-  const onJobOutputClick = (job: ScanJob) => {
+  const onJobOutputClick = (job: Job) => {
     setJobOutputDialog(job);
   };
 

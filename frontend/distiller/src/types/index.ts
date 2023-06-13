@@ -76,7 +76,7 @@ export const FailedJobStates = new Set<JobState>([
   JobState.CANCELLED,
 ]);
 
-export type ScanJob = {
+export type Job = {
   id: IdType;
   job_type: JobType;
   scan_id: IdType;
@@ -98,7 +98,7 @@ export type Scan = {
   locations: ScanLocation[];
   notes?: string;
   image_path?: string;
-  jobs: ScanJob[];
+  jobs: Job[];
   prevScanId?: IdType;
   nextScanId?: IdType;
   metadata?: Metadata;
