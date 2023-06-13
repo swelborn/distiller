@@ -2,7 +2,6 @@ import json
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
-from app.schema
 
 import faust
 from faust.serializers import codecs
