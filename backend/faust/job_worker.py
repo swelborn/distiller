@@ -23,6 +23,7 @@ from constants import (COUNT_JOB_SCRIPT_TEMPLATE, DATE_DIR_FORMAT,
                        TOPIC_JOB_SUBMIT_EVENTS, TRANSFER_JOB_SCRIPT_TEMPLATE,
                        JobState)
 from faust_records import Job, JobType, SubmitJobEvent
+
 from schemas import JobUpdate
 from schemas import Location as LocationRest
 from schemas import Machine, Scan, ScanUpdate, SfapiJob

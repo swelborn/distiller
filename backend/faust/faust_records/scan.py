@@ -1,16 +1,11 @@
 import json
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import faust
 from faust.serializers import codecs
+from .location import Location
 from json_utils import NumpyEncoder
-
-
-class Location(faust.Record):
-    host: str
-    path: str
 
 
 class Scan(faust.Record):
@@ -18,28 +13,6 @@ class Scan(faust.Record):
     locations: List[Location]
     created: datetime
     scan_id: Optional[int]
-    jobs: Optional[List["Job"]]
-
-
-class JobType(str, Enum):
-    COUNT = "count"
-    TRANSFER = "transfer"
-
-    def __str__(self) -> str:
-        return self.value
-
-
-class Job(faust.Record):
-    id: int
-    job_type: JobType
-    machine: str
-    params: Dict[str, Union[str, int, float]]
-    scans: Optional[List["Scan"]]
-
-
-class SubmitJobEvent(faust.Record):
-    job: Job
-    scan: Optional["Scan"]
 
 
 class json_numpy(codecs.Codec):
@@ -62,8 +35,3 @@ class ScanUpdatedEvent(faust.Record):
     id: int
     notebooks: Optional[List[str]]
     event_type: str = "scan.updated"
-
-
-Job.update_forward_refs()
-Scan.update_forward_refs()
-SubmitJobEvent.update_forward_refs()
