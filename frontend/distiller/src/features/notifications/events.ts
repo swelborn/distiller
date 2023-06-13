@@ -1,8 +1,13 @@
-import { IdType, Scan, ScanLocation, Microscope } from '../../types';
+import { IdType, Job, JobType, JobState, Scan, ScanLocation, Microscope } from '../../types';
 
 export enum ScanEventType {
   Created = 'scan.created',
   Updated = 'scan.updated',
+}
+
+export enum JobEventType {
+  Submit = 'job.submit',
+  Updated = 'job.updated'
 }
 
 export enum MicroscopeEventType {
@@ -30,6 +35,32 @@ export function isScanCreatedEvent(ev: any): ev is ScanCreatedEvent {
 
 export function isScanUpdatedEvent(ev: any): ev is ScanUpdatedEvent {
   return ev && ev.event_type === ScanEventType.Updated;
+}
+
+export interface JobEvent<T extends JobEventType> extends Partial<Job> {
+  id: IdType;
+  event_type: T;
+}
+
+export interface JobSubmitEvent extends JobEvent<JobEventType.Updated> {
+  job_type: JobType;
+  params: any;
+  machine: string;
+}
+export interface JobUpdatedEvent extends JobEvent<JobEventType.Updated> {
+  scans?: Scan[];
+  slurm_id?: IdType;
+  elapsed?: number;
+  output?: string;
+  state?: JobState;
+}
+
+export function isJobSubmitEvent(ev: any): ev is JobSubmitEvent {
+  return ev && ev.event_type === JobEventType.Submit;
+}
+
+export function isJobUpdatedEvent(ev: any): ev is JobUpdatedEvent {
+  return ev && ev.event_type === JobEventType.Updated;
 }
 
 export interface MicroscopeUpdatedEvent extends Partial<Microscope> {}
