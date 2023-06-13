@@ -199,13 +199,21 @@ async def get_jobs(session: aiohttp.ClientSession, slurm_id: int) -> List[Job]:
     wait=tenacity.wait_exponential(max=10),
     stop=tenacity.stop_after_attempt(10),
 )
-async def get_job(session: aiohttp.ClientSession, id: int) -> Job:
+async def get_job(
+    session: aiohttp.ClientSession, id: int, with_scans: Optional[bool] = False
+) -> Job:
     headers = {
         settings.API_KEY_NAME: settings.API_KEY,
         "Content-Type": "application/json",
     }
+    params = {}
 
-    async with session.get(f"{settings.API_URL}/jobs/{id}", headers=headers) as r:
+    if with_scans:
+        params = {"with_scans": True}
+
+    async with session.get(
+        f"{settings.API_URL}/jobs/{id}", headers=headers, params=params
+    ) as r:
         r.raise_for_status()
         json = await r.json()
 
