@@ -111,6 +111,12 @@ export type ScansRequestResult = {
   totalCount: number;
 };
 
+export type JobsRequestResult = {
+  jobs: Job[];
+  // The unfiltered number of jobs
+  totalCount: number;
+};
+
 export type Machine = {
   name: string;
   status: string;
