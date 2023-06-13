@@ -79,12 +79,12 @@ export const FailedJobStates = new Set<JobState>([
 export type Job = {
   id: IdType;
   job_type: JobType;
-  scans: Scan[];
-  slurm_id: IdType;
-  elapsed: number;
-  state: JobState;
+  scans: Scan[] | null;
+  slurm_id: IdType | null;
+  elapsed: number | null;
+  state: JobState | null;
   params: any;
-  output?: string;
+  output?: string | null;
   machine?: string;
 };
 

@@ -44,15 +44,19 @@ export interface JobEvent<T extends JobEventType> extends Partial<Job> {
 
 export interface JobSubmitEvent extends JobEvent<JobEventType.Updated> {
   job_type: JobType;
+  scans: Scan[] | null;
+  slurm_id: IdType | null;
+  elapsed: number | null;
+  state: JobState | null;
   params: any;
-  machine: string;
 }
+
 export interface JobUpdatedEvent extends JobEvent<JobEventType.Updated> {
   scans?: Scan[];
   slurm_id?: IdType;
   elapsed?: number;
-  output?: string;
   state?: JobState;
+  output?: string;
 }
 
 export function isJobSubmitEvent(ev: any): ev is JobSubmitEvent {
