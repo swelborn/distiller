@@ -1,12 +1,11 @@
 from datetime import timedelta
 from enum import Enum
-from typing import Dict, Optional, Union, List, ForwardRef, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, ForwardRef, List, Optional, Union
 
 Scan = ForwardRef("Scan")
 
 if TYPE_CHECKING:
     from .scan import Scan
-
 
 from pydantic import BaseModel
 

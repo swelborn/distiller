@@ -1,7 +1,7 @@
 import math
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, ForwardRef, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, ForwardRef, List, Optional
 
 Job = ForwardRef("Job")
 

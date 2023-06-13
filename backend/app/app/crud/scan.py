@@ -5,8 +5,8 @@ from sqlalchemy import desc, or_, update
 from sqlalchemy.orm import Session, noload
 
 from app import models, schemas
-from app.crud import microscope
 from app.crud import job as job_crud
+from app.crud import microscope
 
 
 def get_scan(db: Session, id: int, with_jobs: bool = False):
@@ -15,11 +15,14 @@ def get_scan(db: Session, id: int, with_jobs: bool = False):
         query = query.options(noload(models.Scan.jobs))
     return query.filter(models.Scan.id == id).first()
 
+
 def get_scan_by_scan_id(db: Session, scan_id: int):
     return db.query(models.Scan).filter(models.Scan.scan_id == scan_id).first()
 
+
 def get_jobs_for_scan(db: Session, scan: models.Scan):
     return [job_crud.get_job(db, job.id, with_scans=False) for job in scan.jobs]
+
 
 def _get_scans_query(
     db: Session,
@@ -48,7 +51,6 @@ def _get_scans_query(
         if state == schemas.ScanState.TRANSFER:
             query = query.filter(models.Scan.progress < 100)
         elif state == schemas.ScanState.COMPLETE:
-
             query = query.filter(models.Scan.progress == 100)
 
     if created is not None:
@@ -155,7 +157,6 @@ def create_scan(
     scan.locations = []
 
     if scan.microscope_id is None:
-
         microscope_ids = [m.id for m in microscope.get_microscopes(db)]
         # We default to the first ( 4D Camera )
         scan.microscope_id = microscope_ids[0]
@@ -182,7 +183,6 @@ def update_scan(
     notes: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,
     job_id: Optional[int] = None,
-
 ):
     updated = False
 

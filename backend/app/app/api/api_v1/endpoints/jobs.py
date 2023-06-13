@@ -6,11 +6,8 @@ from sqlalchemy.orm import Session
 from app import schemas
 from app.api.deps import get_db, oauth2_password_bearer_or_api_key
 from app.crud import job as crud
-from app.crud import scan as scan_crud
-from app.kafka.producer import (send_scan_event_to_kafka,
-                                send_submit_job_event_to_kafka)
+from app.kafka.producer import send_submit_job_event_to_kafka
 from app.schemas import SubmitJobEvent
-from app.schemas.scan import ScanUpdateEvent
 
 router = APIRouter()
 

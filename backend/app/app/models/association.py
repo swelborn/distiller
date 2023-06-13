@@ -1,4 +1,5 @@
-from sqlalchemy import ForeignKey, Column, Table
+from sqlalchemy import Column, ForeignKey, Table
+
 from app.db.base_class import Base
 
 scan_job_table = Table(
