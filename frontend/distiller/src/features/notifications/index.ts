@@ -9,12 +9,14 @@ import {
 import { apiClient } from '../../client';
 import { startMockNotifications } from './mock';
 import {
+  isJobUpdatedEvent,
   isMicroscopeUpdatedEvent,
   isScanCreatedEvent,
   isScanUpdatedEvent,
 } from './events';
 import { setScan, updateScan } from '../scans';
 import { updateMicroscope } from '../microscopes';
+import { updateJob } from '../jobs';
 
 class NotificationHub {
   constructor(
@@ -34,6 +36,8 @@ class NotificationHub {
         dispatch(updateScan(msg));
       } else if (isMicroscopeUpdatedEvent(msg)) {
         dispatch(updateMicroscope(msg));
+      } else if (isJobUpdatedEvent(msg)) {
+        dispatch(updateJob(msg))
       }
     };
 
