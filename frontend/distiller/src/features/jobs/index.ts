@@ -10,6 +10,9 @@ import {
   getJobs as getJobsAPI,
   getJob as getJobAPI,
 } from './api';
+import {
+  getScanJobs as getScanJobsAPI
+} from '../scans/api'
 import { Job, IdType, JobsRequestResult } from '../../types';
 import { DateTime } from 'luxon';
 
@@ -50,6 +53,18 @@ export const getJob = createAsyncThunk<Job, { id: IdType, withScans: boolean }>(
   }
 );
 
+export const getJobsByScanId = createAsyncThunk<
+  Job[],
+  {
+    scanId: IdType;
+  }
+>('jobs/fetchByScanId', async (payload, _thunkAPI) => {
+  const { scanId } = payload;
+  const result = await getScanJobsAPI(scanId);
+
+  return result;
+});
+
 
 export const jobsSlice = createSlice({
   name: 'jobs',
@@ -60,7 +75,6 @@ export const jobsSlice = createSlice({
       jobsAdapter.setOne(state, action.payload);
     },
     updateJob(state, action: PayloadAction<Partial<Job>>) {
-      // const currentJob = jobsSelector.selectById
       const { id, ...changes } = action.payload;
       if (id !== undefined) {
         jobsAdapter.updateOne(state, { id, changes });
@@ -79,7 +93,6 @@ export const jobsSlice = createSlice({
       })
       .addCase(getJobs.fulfilled, (state, action) => {
         const { totalCount, jobs } = action.payload;
-
         state.status = 'complete';
         state.totalCount = totalCount;
         jobsAdapter.setAll(state, jobs);
@@ -87,7 +100,10 @@ export const jobsSlice = createSlice({
       .addCase(getJob.fulfilled, (state, action) => {
         jobsAdapter.setOne(state, action.payload);
       })
-
+      .addCase(getJobsByScanId.fulfilled, (state, action) => {
+        state.status = 'complete';
+        jobsAdapter.setAll(state, action.payload);
+      });
   },
 });
 
@@ -96,10 +112,15 @@ export const jobsSelector = jobsAdapter.getSelectors<RootState>(
 );
 
 const jobState = (rootState: RootState) => rootState.jobs;
-const { selectById } = jobsAdapter.getSelectors();
+const { selectById, selectAll } = jobsAdapter.getSelectors();
 export const jobSelector = (id: IdType) => {
   return createSelector(jobState, (state) => selectById(state, id));
 };
+
+export const allJobsSelector = createSelector(
+  jobState,
+  selectAll
+);
 
 export const totalCount = (state: RootState) => state.jobs.totalCount;
 
