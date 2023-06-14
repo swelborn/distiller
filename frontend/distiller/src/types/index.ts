@@ -13,6 +13,7 @@ export type ScanLocation = {
 export enum JobType {
   Transfer = 'transfer',
   Count = 'count',
+  Streaming = 'streaming'
 }
 
 export enum JobState {
