@@ -36,6 +36,7 @@ import { DateTime } from 'luxon';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { staticURL } from '../client';
 import { getScan, scansSelector, patchScan } from '../features/scans';
+import { getJobsByScanId, allJobsSelector } from '../features/jobs';
 import { getNotebooks, selectNotebooks } from '../features/notebooks';
 import {
   machineState,
@@ -160,10 +161,11 @@ const ScanPage: React.FC<Props> = () => {
     }
   }
 
-  let withJobs: boolean = true;
+  let withJobs: boolean = false;
 
   useEffect(() => {
     dispatch(getScan({ id: scanId, withJobs: withJobs  }));
+    dispatch(getJobsByScanId({scanId: scanId}))
   }, [dispatch, scanId, withJobs]);
 
   useEffect(() => {
@@ -234,6 +236,8 @@ const ScanPage: React.FC<Props> = () => {
   const scan = useAppSelector((state) =>
     scansSelector.selectById(state, scanId)
   );
+
+  const jobs = useAppSelector(allJobsSelector);
 
   const notebooks = useAppSelector((state) => selectNotebooks(state));
 
@@ -460,9 +464,12 @@ const ScanPage: React.FC<Props> = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {[...scan.jobs]
-                  .sort((a, b) => b.id - a.id)
+                {[...jobs]
+                  .sort((a, b) => (b ? b.id : 0) - (a ? a.id : 0))
                   .map((job) => {
+                    if (!job) {
+                      return null;
+                    }
                     const Icon = jobTypeToIcon(job.job_type);
                     return (
                       <TableRow key={job.id}>
@@ -473,7 +480,7 @@ const ScanPage: React.FC<Props> = () => {
                         </TableCell>
                         <TableCell>{job.slurm_id}</TableCell>
                         <TableCell>
-                          {humanizeDuration(job.elapsed * 1000)}
+                          {humanizeDuration(job.elapsed ? job.elapsed * 1000 : 0)}
                         </TableCell>
                         <TableStateCell align="right">
                           <StateContent>
@@ -483,7 +490,7 @@ const ScanPage: React.FC<Props> = () => {
                             >
                               <OutputIcon />
                             </IconButton>
-                            <JobStateComponent state={job.state} />
+                            {job.state && <JobStateComponent state={job.state} />}
                           </StateContent>
                         </TableStateCell>
                       </TableRow>
