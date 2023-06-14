@@ -7,12 +7,15 @@ import { CssBaseline } from '@mui/material';
 import './App.css';
 import PrivateRoute from './routes/private';
 import DefaultMicroscope from './routes/default';
-import { HOME_PATH, AUTH_PATH, SCANS_PATH, SCANS } from './routes';
+import { HOME_PATH, AUTH_PATH, SCANS_PATH, SCANS, SESSIONS_PATH, SESSIONS } from './routes';
 import ScansPage from './pages/scans';
 import AuthPage from './pages/auth';
 import ScanPage from './pages/scan';
+import SessionPage from './pages/session'; 
+import SessionsPage from './pages/sessions'; 
 import HeaderComponent from './components/header';
 import FooterComponent from './components/footer';
+import NavigationComponent from './components/navigation';
 import { useAppDispatch } from './app/hooks';
 import { restoreSession } from './features/auth';
 import {
@@ -43,6 +46,30 @@ function App() {
               <div className="inner-content">
                 <Routes>
                   <Route
+                    path={`/:microscope/${SESSIONS}`}
+                    element={
+                      <PrivateRoute>
+                        <SessionsPage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path={`/:microscope/${SESSIONS}/:jobId`}
+                    element={
+                      <PrivateRoute>
+                        <SessionPage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path={`/:microscope/${SESSIONS}/:jobId/${SCANS}/:scanId`}
+                    element={
+                      <PrivateRoute>
+                        <ScanPage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
                     path={`/:microscope/${SCANS}/:scanId`}
                     element={
                       <PrivateRoute>
@@ -62,10 +89,15 @@ function App() {
                     path={`${SCANS_PATH}/:scanId`}
                     element={<DefaultMicroscope />}
                   />
+                  <Route path={SESSIONS_PATH} element={<DefaultMicroscope />} />
                   <Route path={SCANS_PATH} element={<DefaultMicroscope />} />
                   <Route path={AUTH_PATH} element={<AuthPage />} />
                   <Route path={HOME_PATH} element={<DefaultMicroscope />} />
+                  
                 </Routes>
+              </div>
+              <div className="navigation">
+                <NavigationComponent />
               </div>
               <div className="footer">
                 <FooterComponent />
