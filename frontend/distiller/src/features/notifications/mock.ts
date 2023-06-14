@@ -64,7 +64,7 @@ async function mockScanUpdates(ws: WebSocket, id: IdType) {
 
   const job: Job = {
     id: 0,
-    scan_id: id,
+    scans: [],
     job_type: JobType.Count,
     slurm_id: 123,
     elapsed: 213,

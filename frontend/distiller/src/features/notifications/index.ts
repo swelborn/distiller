@@ -79,9 +79,9 @@ export const connectNotifications = createAsyncThunk<void, ConnectPayload>(
 
     const mock = process.env.NODE_ENV === 'development';
 
-    if (mock) {
-      startMockNotifications(ws);
-    }
+    // if (mock) {
+    //   startMockNotifications(ws);
+    // }
   }
 );
 
