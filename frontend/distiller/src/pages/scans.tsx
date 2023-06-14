@@ -145,7 +145,15 @@ export const intDeserializer: Deserializer<number> = (nStr) => {
   return n;
 };
 
-const ScansPage: React.FC = () => {
+export interface ScansPageProps {
+  hideDiskUsageBar?: boolean;
+  startStreaming?: boolean;
+}
+
+const ScansPage: React.FC<ScansPageProps> = ({
+  hideDiskUsageBar = false,
+  startStreaming = false,
+}) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const scans = useAppSelector(scansSelector.selectAll);
@@ -264,6 +272,13 @@ const ScansPage: React.FC = () => {
       document.title = `distiller - ${microscopeName}`;
     }
   }, [microscopes, microscopeId]);
+
+  useEffect(() => {
+    if (startStreaming) {
+      setPage(0);
+      setStartDateFilter(DateTime.now());
+    }
+  }, [startStreaming]);
 
   const onSaveNotes = (id: IdType, notes: string) => {
     return dispatch(patchScan({ id, updates: { notes } }));
@@ -526,7 +541,7 @@ const ScansPage: React.FC = () => {
 
   return (
     <React.Fragment>
-      {disk_usage && (
+      {!hideDiskUsageBar && disk_usage && (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Box sx={{ minWidth: 105 }}>
             <Typography variant="body2" color="text.secondary">
