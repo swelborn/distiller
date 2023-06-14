@@ -13,6 +13,7 @@ from pydantic import BaseModel
 class JobType(str, Enum):
     TRANSFER = "transfer"
     COUNT = "count"
+    STREAMING = "streaming"
 
     def __str__(self) -> str:
         return self.value
