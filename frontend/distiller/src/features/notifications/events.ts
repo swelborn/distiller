@@ -42,13 +42,10 @@ export interface JobEvent<T extends JobEventType> extends Partial<Job> {
   event_type: T;
 }
 
-export interface JobSubmitEvent extends JobEvent<JobEventType.Updated> {
-  job_type: JobType;
-  scans: Scan[] | null;
-  slurm_id: IdType | null;
-  elapsed: number | null;
-  state: JobState | null;
-  params: any;
+export interface JobSubmitEvent {
+  job: Job;
+  scan: Scan;
+  event_type: JobEventType.Submit;
 }
 
 export interface JobUpdatedEvent extends JobEvent<JobEventType.Updated> {
@@ -62,6 +59,7 @@ export interface JobUpdatedEvent extends JobEvent<JobEventType.Updated> {
 export function isJobSubmitEvent(ev: any): ev is JobSubmitEvent {
   return ev && ev.event_type === JobEventType.Submit;
 }
+
 
 export function isJobUpdatedEvent(ev: any): ev is JobUpdatedEvent {
   return ev && ev.event_type === JobEventType.Updated;

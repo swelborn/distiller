@@ -38,7 +38,7 @@ class NotificationHub {
       } else if (isMicroscopeUpdatedEvent(msg)) {
         dispatch(updateMicroscope(msg));
       } else if (isJobSubmitEvent(msg)) {
-        const job = { ...msg }
+        const { job } = { ...msg };
         dispatch(setJob(job));
       } else if (isJobUpdatedEvent(msg)) {
         dispatch(updateJob(msg));
