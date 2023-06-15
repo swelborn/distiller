@@ -1,4 +1,4 @@
-import { IdType, JobType, Job, JobsRequestResult } from '../../types';
+import { IdType, JobType, Job, JobsRequestResult, Scan } from '../../types';
 import { apiClient } from '../../client';
 
 export function createJob(
@@ -76,3 +76,14 @@ export function getJob(id: IdType, withScans?: boolean): Promise<Job> {
     })
     .then((res) => res.json());
 }
+
+
+export function getJobScans(id: IdType): Promise<Scan[]> {
+
+  return apiClient
+    .get({
+      url: `jobs/${id}/scans`,
+    })
+    .then((res) => res.json());
+}
+
