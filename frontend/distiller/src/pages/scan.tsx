@@ -27,6 +27,7 @@ import CountIcon from '@mui/icons-material/BlurOn';
 import OutputIcon from '@mui/icons-material/Terminal';
 import LeftIcon from '@mui/icons-material/ArrowLeft';
 import RightIcon from '@mui/icons-material/ArrowRight';
+import StreamIcon from '@mui/icons-material/Stream';
 import TextSnippetOutlined from '@mui/icons-material/TextSnippetOutlined';
 import { pink } from '@mui/material/colors';
 import Tooltip from '@mui/material/Tooltip';
@@ -107,7 +108,9 @@ function jobTypeToIcon(type: JobType) {
     return CountIcon;
   } else if (type === JobType.Transfer) {
     return TransferIcon;
-  } else {
+  } else if (type === JobType.Streaming) {
+    return StreamIcon;
+  }else {
     throw new Error('Unknown job type');
   }
 }
