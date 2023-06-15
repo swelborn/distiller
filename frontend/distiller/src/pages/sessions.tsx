@@ -8,13 +8,11 @@ import {
   Box,
   Button,
   Card,
-  CardActions,
   CardContent,
   List,
   ListItem,
   TablePagination,
   Typography,
-  Popper,
   Divider,
   Switch,
   FormControlLabel,
@@ -111,19 +109,14 @@ const MemoListItem = React.memo(
                 : ''}
             </Typography>
             <EditableField value={notesValue} onSave={onSaveNotes} />
+            {enablePreview && hoveredJobId === job.id && (
+              <SessionPage
+                jobId={hoveredJobId}
+                showBackButton={false}
+              ></SessionPage>
+            )}
           </CardContent>
         </HoverCard>
-        {enablePreview && (
-          <Popper
-            open={Boolean(anchorEl) && hoveredJobId === job.id}
-            anchorEl={anchorEl}
-          >
-            <SessionPage
-              jobId={hoveredJobId ?? undefined}
-              showBackButton={false}
-            ></SessionPage>
-          </Popper>
-        )}
       </ListItem>
     );
   }
@@ -180,7 +173,7 @@ const SessionsPage: React.FC = () => {
   // Job-related state management
   const [hoveredJobId, setHoveredJobId] = useState<IdType | null>(null);
   const [sessionJobId, setSessionJobId] = useState<IdType | null>(null);
-  const [enablePreview, setEnablePreview] = useState<boolean>(false);
+  const [enablePreview, setEnablePreview] = useState<boolean>(true);
   const jobsGroupedByDate = groupBy(jobs, (job) =>
     job.submit ? DateTime.fromISO(job.submit).toISO().split('T')[0] : undefined
   );

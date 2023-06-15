@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from '../app/hooks';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import IconButton from '@mui/material/IconButton';
 import { IdType } from '../types';
+import { Typography } from '@mui/material';
 
 export interface SessionPageProps {
   jobId?: IdType;
@@ -21,9 +22,10 @@ const SessionPage: React.FC<SessionPageProps> = ({
 
   const jobIdParam = useUrlParams().jobId;
   const jobId = initialJobId || parseInt(jobIdParam as string, 10);
+  const scans = useAppSelector(scansSelector.selectAll);
 
   useEffect(() => {
-    if ({initialJobId}) {
+    if ({ initialJobId }) {
       return;
     }
     dispatch(getJobScans({ jobId: jobId }));
@@ -43,7 +45,13 @@ const SessionPage: React.FC<SessionPageProps> = ({
           <ArrowBackIcon />
         </IconButton>
       )}
-      <ScansPage {...scansPageProps}></ScansPage>
+      {scans.length > 0 ? (
+        <ScansPage {...scansPageProps}></ScansPage>
+      ) : (
+        <Typography variant="h6" component="div">
+          No scans!
+        </Typography>
+      )}
     </React.Fragment>
   );
 };
