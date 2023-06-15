@@ -3,19 +3,38 @@ from typing import Union
 from aiokafka import AIOKafkaProducer
 
 from app.core.config import settings
-from app.core.constants import (TOPIC_CUSTODIAN_EVENTS,
-                                TOPIC_HAADF_FILE_EVENTS, TOPIC_JOB_EVENTS,
-                                TOPIC_MICROSCOPE_EVENTS, TOPIC_NOTEBOOK_EVENTS,
-                                TOPIC_SCAN_EVENTS, TOPIC_SCAN_FILE_EVENTS,
-                                TOPIC_SCAN_FILE_SYNC_EVENTS,
-                                TOPIC_STATUS_FILE_EVENTS,
-                                TOPIC_STATUS_FILE_SYNC_EVENTS,
-                                TOPIC_JOB_CANCEL_EVENTS)
+from app.core.constants import (
+    TOPIC_CUSTODIAN_EVENTS,
+    TOPIC_HAADF_FILE_EVENTS,
+    TOPIC_JOB_SUBMIT_EVENTS,
+    TOPIC_MICROSCOPE_EVENTS,
+    TOPIC_NOTEBOOK_EVENTS,
+    TOPIC_SCAN_EVENTS,
+    TOPIC_SCAN_FILE_EVENTS,
+    TOPIC_SCAN_FILE_SYNC_EVENTS,
+    TOPIC_STATUS_FILE_EVENTS,
+    TOPIC_STATUS_FILE_SYNC_EVENTS,
+    TOPIC_JOB_CANCEL_EVENTS,
+    TOPIC_JOB_UPDATE_EVENTS,
+)
 from app.core.logging import logger
-from app.schemas import (FileSystemEvent, HaadfUploaded, MicroscopeUpdateEvent,
-                         NotebookCreateEvent, ScanCreatedEvent,
-                         ScanFileUploaded, ScanUpdateEvent, SyncEvent, CancelJobEvent)
-from app.schemas.events import RemoveScanFilesEvent, SubmitJobEvent
+from app.schemas import (
+    FileSystemEvent,
+    HaadfUploaded,
+    MicroscopeUpdateEvent,
+    NotebookCreateEvent,
+    ScanCreatedEvent,
+    ScanFileUploaded,
+    ScanUpdateEvent,
+    SyncEvent,
+    CancelJobEvent,
+)
+from app.schemas.events import (
+    RemoveScanFilesEvent,
+    SubmitJobEvent,
+    CancelJobEvent,
+    UpdateJobEvent,
+)
 
 
 def serializer(event: FileSystemEvent) -> bytes:
@@ -101,23 +120,26 @@ async def send_scan_event_to_kafka(
         logger.exception(f"Exception send on topic: {TOPIC_SCAN_EVENTS}")
 
 
-async def send_submit_job_event_to_kafka(event: SubmitJobEvent) -> None:
+async def send_job_event_to_kafka(
+    event: Union[SubmitJobEvent, CancelJobEvent, UpdateJobEvent]
+) -> None:
     if producer is None:
         raise Exception("Producer has not been initialized")
+    event_topic = {
+        "job.submit": TOPIC_JOB_SUBMIT_EVENTS,
+        "job.updated": TOPIC_JOB_UPDATE_EVENTS,
+        "job.cancel": TOPIC_JOB_CANCEL_EVENTS
+        }
+    if event.event_type not in event_topic:
+        logger.exception(f"Topic not in event_topic map.")
+        return
+    topic = event_topic[event.event_type]
 
     try:
-        await producer.send(TOPIC_JOB_EVENTS, event)
+        await producer.send(topic, event)
     except:
-        logger.exception(f"Exception send on topic: {TOPIC_JOB_EVENTS}")
+        logger.exception(f"Exception send on topic: {topic}")
 
-async def send_cancel_job_event_to_kafka(event: CancelJobEvent) -> None:
-    if producer is None:
-        raise Exception("Producer has not been initialized")
-
-    try:
-        await producer.send(TOPIC_JOB_CANCEL_EVENTS, event)
-    except:
-        logger.exception(f"Exception send on topic: {TOPIC_JOB_CANCEL_EVENTS}")
 
 async def send_remove_scan_files_event_to_kafka(event: RemoveScanFilesEvent) -> None:
     if producer is None:
