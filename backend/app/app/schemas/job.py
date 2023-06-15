@@ -63,6 +63,7 @@ class Job(BaseModel):
     output: Optional[str]
     elapsed: Optional[timedelta]
     submit: Optional[datetime]
+    notes: Optional[str]
 
     class Config:
         orm_mode = True
@@ -82,6 +83,7 @@ class JobUpdate(BaseModel):
     elapsed: Optional[timedelta]
     scan_id: Optional[int]
     submit: Optional[datetime]
+    notes: Optional[str]
 
 
 from .scan import Scan

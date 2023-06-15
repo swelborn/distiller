@@ -88,6 +88,7 @@ export type Job = {
   output?: string | null;
   machine?: string;
   submit?: string | null;
+  notes?: string;
 };
 
 export type Metadata = { [name: string]: any };

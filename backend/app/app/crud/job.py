@@ -85,6 +85,11 @@ def update_job(
         or_comparisons.append(models.Job.submit != updates.submit)
         or_comparisons.append(models.Job.submit == None)
 
+    if updates.notes is not None:
+        statement = statement.values(notes=updates.notes)
+        or_comparisons.append(models.Job.notes != updates.notes)
+        or_comparisons.append(models.Job.notes == None)
+
     if updates.scan_id is not None:
         scan = scan_crud.get_scan(db, updates.scan_id)
 

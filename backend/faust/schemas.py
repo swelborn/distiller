@@ -60,6 +60,7 @@ class JobUpdate(BaseModel):
     output: Optional[str]
     elapsed: Optional[timedelta]
     submit: Optional[datetime]
+    notes: Optional[str]
 
 
 class Job(BaseModel):
@@ -70,6 +71,7 @@ class Job(BaseModel):
     state: str
     machine: str
     submit: Optional[datetime]
+    notes: Optional[str]
 
 
 class SfapiJob(BaseModel):
