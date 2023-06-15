@@ -87,3 +87,11 @@ export function getJobScans(id: IdType): Promise<Scan[]> {
     .then((res) => res.json());
 }
 
+export function patchJob(id: IdType, updates: Partial<Job>): Promise<Job> {
+  return apiClient
+    .patch({
+      url: `jobs/${id}`,
+      json: updates,
+    })
+    .then((res) => res.json());
+}

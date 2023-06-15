@@ -9,6 +9,7 @@ import { RootState } from '../../app/store';
 import {
   getJobs as getJobsAPI,
   getJob as getJobAPI,
+  patchJob as patchJobAPI,
 } from './api';
 import {
   getScanJobs as getScanJobsAPI
@@ -65,6 +66,16 @@ export const getJobsByScanId = createAsyncThunk<
   return result;
 });
 
+export const patchJob = createAsyncThunk<
+  Job,
+  { id: IdType; updates: Partial<Job> }
+>('jobs/patch', async (payload, _thunkAPI) => {
+  const { id, updates } = payload;
+  const scan = await patchJobAPI(id, updates);
+
+  return scan;
+});
+
 
 export const jobsSlice = createSlice({
   name: 'jobs',
@@ -73,6 +84,7 @@ export const jobsSlice = createSlice({
     setJob(state, action: PayloadAction<Job>) {
       state.totalCount = state.totalCount + 1;
       jobsAdapter.setOne(state, action.payload);
+      state.ids = state.ids.sort((a, b) => Number(b) - Number(a)); // sort ids in descending order
     },
     updateJob(state, action: PayloadAction<Partial<Job>>) {
       const { id, ...changes } = action.payload;
