@@ -59,6 +59,7 @@ class JobUpdate(BaseModel):
     state: Optional[str]
     output: Optional[str]
     elapsed: Optional[timedelta]
+    submit: Optional[datetime]
 
 
 class Job(BaseModel):
@@ -68,6 +69,7 @@ class Job(BaseModel):
     slurm_id: Optional[int]
     state: str
     machine: str
+    submit: Optional[datetime]
 
 
 class SfapiJob(BaseModel):
@@ -76,6 +78,7 @@ class SfapiJob(BaseModel):
     workdir: str
     state: str
     elapsed: timedelta
+    submit: datetime
 
 
 class Machine(BaseModel):

@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, Column, Enum, Integer, Interval, String
+from sqlalchemy import JSON, Column, Enum, Integer, Interval, String, DateTime
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
@@ -16,4 +16,5 @@ class Job(Base):
     output = Column(String, nullable=True)
     elapsed = Column(Interval, nullable=True)
     machine = Column(String, nullable=False)
+    submit = Column(DateTime(timezone=True), nullable=True, index=True)
     scans = relationship("Scan", secondary=scan_job_table, back_populates="jobs")

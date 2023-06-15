@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Dict, ForwardRef, List, Optional, Union
 
@@ -62,6 +62,7 @@ class Job(BaseModel):
     params: Dict[str, Union[str, int, float]]
     output: Optional[str]
     elapsed: Optional[timedelta]
+    submit: Optional[datetime]
 
     class Config:
         orm_mode = True
@@ -80,6 +81,7 @@ class JobUpdate(BaseModel):
     output: Optional[str]
     elapsed: Optional[timedelta]
     scan_id: Optional[int]
+    submit: Optional[datetime]
 
 
 from .scan import Scan

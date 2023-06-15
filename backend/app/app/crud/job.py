@@ -80,6 +80,11 @@ def update_job(
         or_comparisons.append(models.Job.elapsed != updates.elapsed)
         or_comparisons.append(models.Job.elapsed == None)
 
+    if updates.submit is not None:
+        statement = statement.values(submit=updates.submit)
+        or_comparisons.append(models.Job.submit != updates.submit)
+        or_comparisons.append(models.Job.submit == None)
+
     if updates.scan_id is not None:
         scan = scan_crud.get_scan(db, updates.scan_id)
 

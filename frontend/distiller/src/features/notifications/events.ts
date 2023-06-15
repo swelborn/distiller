@@ -54,6 +54,7 @@ export interface JobUpdatedEvent extends JobEvent<JobEventType.Updated> {
   elapsed?: number;
   state?: JobState;
   output?: string;
+  submit?: string;
 }
 
 export function isJobSubmitEvent(ev: any): ev is JobSubmitEvent {

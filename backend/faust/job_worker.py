@@ -2,7 +2,8 @@ import asyncio
 import copy
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -410,9 +411,10 @@ async def update_job(
     job_id: int,
     state: str,
     elapsed: timedelta,
+    submit: datetime,
     output: Optional[str] = None,
 ) -> None:
-    update = JobUpdate(id=job_id, state=state, output=output, elapsed=elapsed)
+    update = JobUpdate(id=job_id, state=state, output=output, elapsed=elapsed, submit=submit)
     await update_job_request(session, update)
 
 
@@ -425,6 +427,11 @@ def extract_jobs(sfapi_response: dict) -> List[SfapiJob]:
         elapsed = timedelta(
             hours=elapsed.hour, minutes=elapsed.minute, seconds=elapsed.second
         )
+        submit = job["submit"]
+        _submit = datetime.strptime(submit, "%Y-%m-%dT%H:%M:%S")
+        # Attach timezone information to the datetime object
+        la_tz = ZoneInfo('America/Los_Angeles')
+        submit = _submit.replace(tzinfo=la_tz)
 
         jobs.append(
             SfapiJob(
@@ -433,6 +440,7 @@ def extract_jobs(sfapi_response: dict) -> List[SfapiJob]:
                 name=job["jobname"],
                 slurm_id=int(job["jobid"]),
                 elapsed=elapsed,
+                submit=submit,
             )
         )
 
