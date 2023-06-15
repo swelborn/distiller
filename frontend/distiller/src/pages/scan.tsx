@@ -68,6 +68,7 @@ import { stopPropagation } from '../utils';
 import { JUPYTER_USER_REDIRECT_URL } from '../constants';
 import CircularProgress from '@mui/material/CircularProgress';
 import { Box } from '@mui/system';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const TableHeaderCell = styled(TableCell)(({ theme }) => ({
   fontWeight: 600,
@@ -293,6 +294,14 @@ const ScanPage: React.FC<Props> = () => {
     <React.Fragment>
       <Card sx={{ marginBottom: '2rem' }}>
         <CardContent>
+        <IconButton
+            onClick={() => navigate(-1)} // Go back by one in the history stack
+            size="small"
+            color="primary"
+            sx={{ mb: 2 }} // add some margin-bottom or as per your need
+          >
+            <ArrowBackIcon />
+          </IconButton>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={4} md={3}>
               {scan.image_path ? (
