@@ -118,7 +118,10 @@ const MemoListItem = React.memo(
             open={Boolean(anchorEl) && hoveredJobId === job.id}
             anchorEl={anchorEl}
           >
-            <SessionPage jobId={hoveredJobId ?? undefined}></SessionPage>
+            <SessionPage
+              jobId={hoveredJobId ?? undefined}
+              showBackButton={false}
+            ></SessionPage>
           </Popper>
         )}
       </ListItem>

@@ -9,9 +9,13 @@ import { IdType } from '../types';
 
 export interface SessionPageProps {
   jobId?: IdType;
+  showBackButton?: boolean;
 }
 
-const SessionPage: React.FC<SessionPageProps> = ({ jobId: initialJobId }) => {
+const SessionPage: React.FC<SessionPageProps> = ({
+  jobId: initialJobId,
+  showBackButton: showBackButton,
+}) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -20,7 +24,7 @@ const SessionPage: React.FC<SessionPageProps> = ({ jobId: initialJobId }) => {
 
   useEffect(() => {
     if ({initialJobId}) {
-        return;
+      return;
     }
     dispatch(getJobScans({ jobId: jobId }));
   }, [dispatch, jobId]);
@@ -34,9 +38,11 @@ const SessionPage: React.FC<SessionPageProps> = ({ jobId: initialJobId }) => {
   };
   return (
     <React.Fragment>
-      <IconButton onClick={() => navigate(-1)} color="primary">
-        <ArrowBackIcon />
-      </IconButton>
+      {showBackButton && (
+        <IconButton onClick={() => navigate(-1)} color="primary">
+          <ArrowBackIcon />
+        </IconButton>
+      )}
       <ScansPage {...scansPageProps}></ScansPage>
     </React.Fragment>
   );
