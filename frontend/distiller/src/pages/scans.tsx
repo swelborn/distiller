@@ -58,6 +58,7 @@ import {
 import { canonicalMicroscopeName } from '../utils/microscopes';
 
 import { useUrlState, Serializer, Deserializer } from '../routes/url-state';
+import { RootState } from '../app/store';
 
 const TableHeaderCell = styled(TableCell)(({ theme }) => ({
   fontWeight: 600,
@@ -145,10 +146,24 @@ export const intDeserializer: Deserializer<number> = (nStr) => {
   return n;
 };
 
-const ScansPage: React.FC = () => {
+export interface ScansPageProps {
+  selector?: (state: RootState) => Scan[];
+  showScansToolbar?: boolean;
+  showTablePagination?: boolean;
+  showDiskUsage?: boolean;
+  shouldFetchScans?: boolean;
+}
+
+const ScansPage: React.FC<ScansPageProps> = ({
+  selector = scansSelector.selectAll,
+  showScansToolbar = true,
+  showTablePagination = true,
+  showDiskUsage = true,
+  shouldFetchScans = true,
+}) => {
+  const scans = useAppSelector(selector);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const scans = useAppSelector(scansSelector.selectAll);
   const totalScans = useAppSelector(totalCount);
   const machines = useAppSelector((state) =>
     machineSelectors.selectAll(machineState(state))
@@ -228,7 +243,7 @@ const ScansPage: React.FC = () => {
 
   let withJobs: boolean = false;
   useEffect(() => {
-    if (microscopeId === undefined) {
+    if (!shouldFetchScans || microscopeId === undefined) {
       return;
     }
 
@@ -528,7 +543,7 @@ const ScansPage: React.FC = () => {
 
   return (
     <React.Fragment>
-      {disk_usage && (
+      {showDiskUsage && disk_usage && (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Box sx={{ minWidth: 105 }}>
             <Typography variant="body2" color="text.secondary">
@@ -548,14 +563,16 @@ const ScansPage: React.FC = () => {
           </Box>
         </Box>
       )}
-      <ScansToolbar
-        startDate={startDateFilter}
-        endDate={endDateFilter}
-        onStartDate={onStartDate}
-        onEndDate={onEndDate}
-        onExport={onExport}
-        showFilterBadge={!isNil(startDateFilter) || !isNil(endDateFilter)}
-      />
+      {showScansToolbar && (
+        <ScansToolbar
+          startDate={startDateFilter}
+          endDate={endDateFilter}
+          onStartDate={onStartDate}
+          onEndDate={onEndDate}
+          onExport={onExport}
+          showFilterBadge={!isNil(startDateFilter) || !isNil(endDateFilter)}
+        />
+      )}
       <TableContainer component={Paper}>
         <Table aria-label="scans table">
           <TableHead>
@@ -658,16 +675,18 @@ const ScansPage: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      <TablePagination
-        rowsPerPageOptions={[10, 20, 100]}
-        component="div"
-        count={totalScans}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={onChangePage}
-        onRowsPerPageChange={onChangeRowsPerPage}
-        labelRowsPerPage="Scans per page"
-      />
+      {showTablePagination && (
+        <TablePagination
+          rowsPerPageOptions={[10, 20, 100]}
+          component="div"
+          count={totalScans}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={onChangePage}
+          onRowsPerPageChange={onChangeRowsPerPage}
+          labelRowsPerPage="Scans per page"
+        />
+      )}
       <ImageDialog
         open={maximizeImg}
         src={activeImg}
