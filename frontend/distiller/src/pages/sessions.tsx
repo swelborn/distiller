@@ -78,16 +78,13 @@ const MemoListItem = React.memo(
     onSaveNotes,
   }: MemoListItemProps) => {
     const navigate = useNavigate();
-    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
     const handleMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
       setHoveredJobId(job.id);
-      setAnchorEl(event.currentTarget);
     };
 
     const handleMouseLeave = () => {
       setHoveredJobId(null);
-      setAnchorEl(null);
     };
 
     return (

@@ -11,10 +11,8 @@ import {
   getJob as getJobAPI,
   patchJob as patchJobAPI,
 } from './api';
-import {
-  getScanJobs as getScanJobsAPI
-} from '../scans/api'
 import { Job, IdType, JobsRequestResult } from '../../types';
+import { getScanJobs as getScanJobsAPI } from '../scans/api';
 import { DateTime } from 'luxon';
 
 export const jobsAdapter = createEntityAdapter<Job>();
@@ -39,12 +37,12 @@ export const getJobs = createAsyncThunk<
   }
 >('jobs/fetch', async (_payload, _thunkAPI) => {
   const { withScans, skip, limit } = _payload;
-  const result = await getJobsAPI( withScans, skip, limit);
+  const result = await getJobsAPI(withScans, skip, limit);
 
   return result;
 });
 
-export const getJob = createAsyncThunk<Job, { id: IdType, withScans: boolean }>(
+export const getJob = createAsyncThunk<Job, { id: IdType; withScans: boolean }>(
   'job/fetch',
   async (payload, _thunkAPI) => {
     const { id, withScans } = payload;
@@ -129,10 +127,7 @@ export const jobSelector = (id: IdType) => {
   return createSelector(jobState, (state) => selectById(state, id));
 };
 
-export const allJobsSelector = createSelector(
-  jobState,
-  selectAll
-);
+export const allJobsSelector = createSelector(jobState, selectAll);
 
 export const totalCount = (state: RootState) => state.jobs.totalCount;
 

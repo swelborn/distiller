@@ -13,9 +13,7 @@ import {
   removeScanFiles as removeScanFilesAPI,
   removeScan as removeScanAPI,
 } from './api';
-import {
-  getJobScans as getJobScansAPI
-} from '../jobs/api';
+import { getJobScans as getJobScansAPI } from '../jobs/api';
 import { Scan, IdType, ScansRequestResult } from '../../types';
 import { DateTime } from 'luxon';
 
@@ -44,20 +42,27 @@ export const getScans = createAsyncThunk<
   }
 >('scans/fetch', async (_payload, _thunkAPI) => {
   const { withJobs, skip, limit, start, end, microscopeId } = _payload;
-  const result = await getScansAPI(microscopeId, withJobs, skip, limit, start, end);
+  const result = await getScansAPI(
+    microscopeId,
+    withJobs,
+    skip,
+    limit,
+    start,
+    end
+  );
 
   return result;
 });
 
-export const getScan = createAsyncThunk<Scan, { id: IdType, withJobs: boolean }>(
-  'scan/fetch',
-  async (payload, _thunkAPI) => {
-    const { id, withJobs } = payload;
-    const scan = await getScanAPI(id, withJobs);
+export const getScan = createAsyncThunk<
+  Scan,
+  { id: IdType; withJobs: boolean }
+>('scan/fetch', async (payload, _thunkAPI) => {
+  const { id, withJobs } = payload;
+  const scan = await getScanAPI(id, withJobs);
 
-    return scan;
-  }
-);
+  return scan;
+});
 
 export const getJobScans = createAsyncThunk<
   Scan[],

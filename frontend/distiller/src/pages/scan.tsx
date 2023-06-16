@@ -111,7 +111,7 @@ function jobTypeToIcon(type: JobType) {
     return TransferIcon;
   } else if (type === JobType.Streaming) {
     return StreamIcon;
-  }else {
+  } else {
     throw new Error('Unknown job type');
   }
 }
@@ -294,7 +294,7 @@ const ScanPage: React.FC<Props> = () => {
     <React.Fragment>
       <Card sx={{ marginBottom: '2rem' }}>
         <CardContent>
-        <IconButton
+          <IconButton
             onClick={() => navigate(-1)} // Go back by one in the history stack
             size="small"
             color="primary"
@@ -492,7 +492,9 @@ const ScanPage: React.FC<Props> = () => {
                         </TableCell>
                         <TableCell>{job.slurm_id}</TableCell>
                         <TableCell>
-                          {humanizeDuration(job.elapsed ? job.elapsed * 1000 : 0)}
+                          {humanizeDuration(
+                            job.elapsed ? job.elapsed * 1000 : 0
+                          )}
                         </TableCell>
                         <TableStateCell align="right">
                           <StateContent>
@@ -502,7 +504,9 @@ const ScanPage: React.FC<Props> = () => {
                             >
                               <OutputIcon />
                             </IconButton>
-                            {job.state && <JobStateComponent state={job.state} />}
+                            {job.state && (
+                              <JobStateComponent state={job.state} />
+                            )}
                           </StateContent>
                         </TableStateCell>
                       </TableRow>
