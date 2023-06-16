@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 
 from sqlalchemy import desc, or_, update
 from sqlalchemy.orm import Session, noload
@@ -24,22 +24,52 @@ def get_job_by_slurm_id(db: Session, slurm_id: int):
     return db.query(models.Job).filter(models.Job.slurm_id == slurm_id).first()
 
 
-def get_jobs(
+def _get_jobs_query(
     db: Session,
     skip: int = 0,
     limit: int = 100,
-    slurm_id: int = None,
-    with_scans: bool = False,
+    slurm_id: Optional[int] = None,
+    with_scans: Optional[bool] = False,
+    job_type: Optional[schemas.JobType] = None,
 ):
     query = db.query(models.Job)
-
-    if slurm_id is not None:
-        query = query.filter(models.Job.slurm_id == slurm_id)
 
     if not with_scans:
         query = query.options(noload(models.Job.scans))
 
+    if slurm_id is not None:
+        query = query.filter(models.Job.slurm_id == slurm_id)
+
+    if job_type is not None:
+        query = query.filter(models.Job.job_type == job_type)
+
+    return query
+
+
+def get_jobs(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    slurm_id: Optional[int] = None,
+    with_scans: Optional[bool] = False,
+    job_type: Optional[schemas.JobType] = None,
+):
+    query = _get_jobs_query(db, skip, limit, slurm_id, with_scans, job_type)
+
     return query.order_by(desc(models.Job.id)).offset(skip).limit(limit).all()
+
+
+def get_jobs_count(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    slurm_id: Optional[int] = None,
+    with_scans: Optional[bool] = False,
+    job_type: Optional[schemas.JobType] = None,
+):
+    query = _get_jobs_query(db, skip, limit, slurm_id, with_scans, job_type)
+
+    return query.count()
 
 
 def create_job(db: Session, job: schemas.JobCreate):
@@ -114,3 +144,32 @@ def update_job(
     db.commit()
 
     return (updated, get_job(db, id, with_scans=False))
+
+
+def get_prev_next_job(
+    db: Session, id: int
+) -> Tuple[Union[int, None], Union[int, None]]:
+    # Fetch the job so we can constrain by microscope id
+    job = get_job(db, id)
+
+    if job is None:
+        raise Exception("Invalid job id: {id}")
+
+    prev_job = (
+        db.query(models.Job.id)
+        .order_by(models.Job.id.desc())
+        .filter(models.Job.job_type == job.job_type)
+        .filter(models.Job.id < id)
+        .limit(1)
+        .scalar()
+    )
+    next_job = (
+        db.query(models.Job.id)
+        .order_by(models.Job.id.asc())
+        .filter(models.Job.job_type == job.job_type)
+        .filter(models.Job.id > id)
+        .limit(1)
+        .scalar()
+    )
+
+    return (prev_job, next_job)
