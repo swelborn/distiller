@@ -259,7 +259,7 @@ const SessionsPage: React.FC = () => {
   useEffect(() => {
     if (hoveredJobId !== null && enablePreview)
       dispatch(getJobScans({ jobId: hoveredJobId }));
-  }, [dispatch, scans, hoveredJobId]);
+  }, [dispatch, hoveredJobId]);
 
   useEffect(() => {
     if (microscopeId === undefined) return;
