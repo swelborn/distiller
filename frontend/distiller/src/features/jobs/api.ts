@@ -25,7 +25,8 @@ export function createJob(
 export function getJobs(
   withScans?: boolean,
   skip?: number,
-  limit?: number
+  limit?: number,
+  jobType?: JobType,
 ): Promise<JobsRequestResult> {
   const params: any = {};
   if (withScans !== undefined) {
@@ -36,6 +37,9 @@ export function getJobs(
   }
   if (limit !== undefined) {
     params['limit'] = limit;
+  }
+  if (jobType !== undefined) {
+    params['job_type'] = jobType;
   }
 
   return apiClient
