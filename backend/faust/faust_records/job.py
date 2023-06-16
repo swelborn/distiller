@@ -21,7 +21,25 @@ class Job(faust.Record):
     params: Dict[str, Union[str, int, float]]
     scans: Optional[List[Scan]]
 
+class JobEventType(str, Enum):
+    SUBMIT = "job.submit"
+    CANCEL = "job.cancel"
 
-class SubmitJobEvent(faust.Record):
+    def __str__(self) -> str:
+        return self.value
+
+    def __repr__(self) -> str:
+        return self.value
+
+
+class JobEvent(faust.Record):
     job: Job
     scan: Optional[Scan]
+    event_type: JobEventType
+
+class SubmitJobEvent(JobEvent):
+    event_type: JobEventType = JobEventType.SUBMIT
+
+
+class CancelJobEvent(JobEvent):
+    event_type: JobEventType = JobEventType.CANCEL
