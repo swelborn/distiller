@@ -10,6 +10,7 @@ import {
   getJobs as getJobsAPI,
   getJob as getJobAPI,
   patchJob as patchJobAPI,
+  cancelJob as cancelJobAPI,
 } from './api';
 import { Job, IdType, JobsRequestResult } from '../../types';
 import { getScanJobs as getScanJobsAPI } from '../scans/api';
@@ -74,6 +75,15 @@ export const patchJob = createAsyncThunk<
   return scan;
 });
 
+export const cancelJob = createAsyncThunk<Job, { id: IdType }>(
+  'jobs/delete',
+  async (payload, _thunkAPI) => {
+    const { id } = payload;
+    const scan = await cancelJobAPI(id);
+
+    return scan;
+  }
+);
 
 export const jobsSlice = createSlice({
   name: 'jobs',
@@ -113,6 +123,8 @@ export const jobsSlice = createSlice({
       .addCase(getJobsByScanId.fulfilled, (state, action) => {
         state.status = 'complete';
         jobsAdapter.setAll(state, action.payload);
+      .addCase(cancelJob.fulfilled, (state, action) => {
+        jobsAdapter.setOne(state, action.payload);
       });
   },
 });
