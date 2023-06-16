@@ -81,9 +81,7 @@ export function getJob(id: IdType, withScans?: boolean): Promise<Job> {
     .then((res) => res.json());
 }
 
-
 export function getJobScans(id: IdType): Promise<Scan[]> {
-
   return apiClient
     .get({
       url: `jobs/${id}/scans`,
@@ -96,6 +94,14 @@ export function patchJob(id: IdType, updates: Partial<Job>): Promise<Job> {
     .patch({
       url: `jobs/${id}`,
       json: updates,
+    })
+    .then((res) => res.json());
+}
+
+export function cancelJob(id: IdType): Promise<Job> {
+  return apiClient
+    .delete({
+      url: `jobs/${id}`,
     })
     .then((res) => res.json());
 }
