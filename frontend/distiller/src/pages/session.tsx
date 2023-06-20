@@ -1,56 +1,48 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import ScansPage, { ScansPageProps } from './scans';
-import { getJobScans, scansSelector } from '../features/scans';
+import React, { useEffect } from 'react';
+import { getJobScans } from '../features/scans';
 import { useParams as useUrlParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import IconButton from '@mui/material/IconButton';
-import { IdType } from '../types';
-import { Typography } from '@mui/material';
+import {
+  addFetchedJobId,
+  fetchedJobIdsSelector,
+  getJob,
+  jobSelector,
+} from '../features/jobs';
+import SessionCard from '../components/session-card';
 
-export interface SessionPageProps {
-  jobId?: IdType;
-  showBackButton?: boolean;
-}
-
-const SessionPage: React.FC<SessionPageProps> = ({
-  jobId: initialJobId,
-  showBackButton: showBackButton,
-}) => {
+const SessionPage: React.FC = ({}) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const jobIdParam = useUrlParams().jobId;
-  const jobId = initialJobId || parseInt(jobIdParam as string, 10);
-  const scans = useAppSelector(scansSelector.selectAll);
+  const jobId = parseInt(jobIdParam as string, 10);
+  const job = useAppSelector(jobSelector(jobId));
+  const fetchedJobIds = useAppSelector(fetchedJobIdsSelector);
 
   useEffect(() => {
-    if ({ initialJobId }) {
-      return;
+    if (!job) {
+      dispatch(getJob({ id: jobId }));
     }
-    dispatch(getJobScans({ jobId: jobId }));
-  }, [dispatch, jobId]);
+    if (job && !fetchedJobIds.includes(job.id)) {
+      dispatch(getJobScans({ jobId: job.id }));
+      dispatch(addFetchedJobId(job.id));
+    }
+  }, [dispatch, fetchedJobIds]);
 
-  const scansPageProps = {
-    selector: scansSelector.selectAll,
-    showScansToolbar: false,
-    showTablePagination: false,
-    showDiskUsage: false,
-    shouldFetchScans: false,
-  };
   return (
     <React.Fragment>
-      {showBackButton && (
-        <IconButton onClick={() => navigate(-1)} color="primary">
-          <ArrowBackIcon />
-        </IconButton>
-      )}
-      {scans.length > 0 ? (
-        <ScansPage {...scansPageProps}></ScansPage>
-      ) : (
-        <Typography variant="h6" component="div">
-          No scans!
-        </Typography>
+      <IconButton onClick={() => navigate(-1)} color="primary">
+        <ArrowBackIcon />
+      </IconButton>
+      {job && (
+        <SessionCard
+          job={job}
+          isHoverable={false}
+          showScans={true}
+          compactMode={false}
+        />
       )}
     </React.Fragment>
   );
