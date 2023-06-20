@@ -16,7 +16,7 @@ import SessionsPage from './pages/sessions';
 import HeaderComponent from './components/header';
 import FooterComponent from './components/footer';
 import NavigationComponent from './components/navigation';
-import { useAppDispatch } from './app/hooks';
+import { useAppDispatch, useShouldShowNavigation } from './app/hooks';
 import { restoreSession } from './features/auth';
 import {
   ThemeProvider,
@@ -26,6 +26,80 @@ import {
 import LandingPage from './pages/landing';
 
 const theme = createTheme();
+
+const NavigationAndRoutes: React.FC = () => {
+  const showNavigation = useShouldShowNavigation();
+
+  return (
+    <div className="content">
+      <div className="inner-content">
+        <Routes>
+          <Route
+            path={`/:microscope/${SESSIONS}`}
+            element={
+              <PrivateRoute>
+                <SessionsPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path={`/:microscope/${SESSIONS}/:jobId`}
+            element={
+              <PrivateRoute>
+                <SessionPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path={`/:microscope/${SESSIONS}/:jobId/${SCANS}/:scanId`}
+            element={
+              <PrivateRoute>
+                <ScanPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path={`/:microscope/${SCANS}/:scanId`}
+            element={
+              <PrivateRoute>
+                <ScanPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path={`/:microscope/${SCANS}`}
+            element={
+              <PrivateRoute>
+                <ScansPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path={`/:microscope`}
+            element={
+              <PrivateRoute>
+                <LandingPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path={`${SCANS_PATH}/:scanId`}
+            element={<DefaultMicroscope />}
+          />
+          <Route path={SESSIONS_PATH} element={<DefaultMicroscope />} />
+          <Route path={SCANS_PATH} element={<DefaultMicroscope />} />
+          <Route path={AUTH_PATH} element={<AuthPage />} />
+          <Route path={HOME_PATH} element={<DefaultMicroscope />} />
+        </Routes>
+      </div>
+      {showNavigation && (
+        <div className="navigation">
+          <NavigationComponent />
+        </div>
+      )}
+    </div>
+  );
+};
 
 function App() {
   const dispatch = useAppDispatch();
@@ -43,71 +117,7 @@ function App() {
             <div className="header">
               <HeaderComponent />
             </div>
-            <div className="content">
-              <div className="inner-content">
-                <Routes>
-                  <Route
-                    path={`/:microscope/${SESSIONS}`}
-                    element={
-                      <PrivateRoute>
-                        <SessionsPage />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path={`/:microscope/${SESSIONS}/:jobId`}
-                    element={
-                      <PrivateRoute>
-                        <SessionPage />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path={`/:microscope/${SESSIONS}/:jobId/${SCANS}/:scanId`}
-                    element={
-                      <PrivateRoute>
-                        <ScanPage />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path={`/:microscope/${SCANS}/:scanId`}
-                    element={
-                      <PrivateRoute>
-                        <ScanPage />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path={`/:microscope/${SCANS}`}
-                    element={
-                      <PrivateRoute>
-                        <ScansPage />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path={`/:microscope`}
-                    element={
-                      <PrivateRoute>
-                        <LandingPage />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path={`${SCANS_PATH}/:scanId`}
-                    element={<DefaultMicroscope />}
-                  />
-                  <Route path={SESSIONS_PATH} element={<DefaultMicroscope />} />
-                  <Route path={SCANS_PATH} element={<DefaultMicroscope />} />
-                  <Route path={AUTH_PATH} element={<AuthPage />} />
-                  <Route path={HOME_PATH} element={<DefaultMicroscope />} />
-                </Routes>
-              </div>
-              <div className="navigation">
-                <NavigationComponent />
-              </div>
-            </div>
+            <NavigationAndRoutes />
             <div className="footer">
               <FooterComponent />
             </div>
