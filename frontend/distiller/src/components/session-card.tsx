@@ -3,7 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { keyframes, css } from '@emotion/react';
 import { useTheme } from '@mui/material/styles';
-import { Card, CardContent, IconButton, Typography } from '@mui/material';
+import {
+  Card,
+  CardContent,
+  CardProps,
+  IconButton,
+  Typography,
+} from '@mui/material';
 import EditableField from './editable-field';
 import OutputIcon from '@mui/icons-material/Terminal';
 
@@ -74,12 +80,13 @@ const RecordingIndicator = styled.div<RecordingIndicatorProps>`
   }
 `;
 
-interface HoverCardProps {
+interface HoverCardProps extends CardProps {
   isHoverable?: boolean;
 }
 
-// Styles for HoverCard
-const HoverCard = styled(Card)<HoverCardProps>(
+const HoverCard = styled(({ isHoverable, ...props }: HoverCardProps) => (
+  <Card {...props} />
+))<HoverCardProps>(
   {
     width: '100%',
     transition: 'transform 0.15s ease-in-out',
