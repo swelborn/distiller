@@ -7,17 +7,14 @@ from app import models, schemas
 from app.crud import scan as scan_crud
 
 
-def get_job(db: Session, id: int, with_scans: bool = False) -> Union[models.Job, None]:
+def get_job(db: Session, id: int) -> Union[models.Job, None]:
     query = db.query(models.Job)
-
-    if not with_scans:
-        query = query.options(noload(models.Job.scans))
 
     return query.filter(models.Job.id == id).first()
 
 
-def get_scans_for_job(db: Session, job: models.Job):
-    return [scan_crud.get_scan(db, scan.id, with_jobs=False) for scan in job.scans]
+def get_job_scans(db: Session, job: models.Job):
+    return [scan_crud.get_scan(db, scan.id) for scan in job.scans]
 
 
 def get_job_by_slurm_id(db: Session, slurm_id: int):
@@ -29,13 +26,9 @@ def _get_jobs_query(
     skip: int = 0,
     limit: int = 100,
     slurm_id: Optional[int] = None,
-    with_scans: Optional[bool] = False,
     job_type: Optional[schemas.JobType] = None,
 ):
     query = db.query(models.Job)
-
-    if not with_scans:
-        query = query.options(noload(models.Job.scans))
 
     if slurm_id is not None:
         query = query.filter(models.Job.slurm_id == slurm_id)
@@ -51,7 +44,6 @@ def get_jobs(
     skip: int = 0,
     limit: int = 100,
     slurm_id: Optional[int] = None,
-    with_scans: Optional[bool] = False,
     job_type: Optional[schemas.JobType] = None,
 ):
     query = _get_jobs_query(db, skip, limit, slurm_id, with_scans, job_type)
@@ -64,7 +56,6 @@ def get_jobs_count(
     skip: int = 0,
     limit: int = 100,
     slurm_id: Optional[int] = None,
-    with_scans: Optional[bool] = False,
     job_type: Optional[schemas.JobType] = None,
 ):
     query = _get_jobs_query(db, skip, limit, slurm_id, with_scans, job_type)
@@ -126,7 +117,7 @@ def update_job(
         if scan is None:
             raise Exception(f"Scan with id {updates.scan_id} does not exist.")
 
-        job = get_job(db, id, with_scans=True)
+        job = get_job(db, id)
         scans_updated = False
 
         if job is not None and not any([s.id == updates.scan_id for s in job.scans]):
@@ -143,7 +134,7 @@ def update_job(
 
     db.commit()
 
-    return (updated, get_job(db, id, with_scans=False))
+    return (updated, get_job(db, id))
 
 
 def get_prev_next_job(

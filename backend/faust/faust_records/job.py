@@ -19,7 +19,8 @@ class Job(faust.Record):
     job_type: JobType
     machine: str
     params: Dict[str, Union[str, int, float]]
-    scans: Optional[List[Scan]]
+    scanIds: Optional[List[int]]
+
 
 class JobEventType(str, Enum):
     SUBMIT = "job.submit"
@@ -36,6 +37,7 @@ class JobEvent(faust.Record):
     job: Job
     scan: Optional[Scan]
     event_type: JobEventType
+
 
 class SubmitJobEvent(JobEvent):
     event_type: JobEventType = JobEventType.SUBMIT

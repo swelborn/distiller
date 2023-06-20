@@ -66,7 +66,7 @@ class JobUpdate(BaseModel):
 class Job(BaseModel):
     id: int
     job_type: str
-    scans: Optional[List[Scan]]
+    scanIds: Optional[List[int]]
     slurm_id: Optional[int]
     state: str
     machine: str

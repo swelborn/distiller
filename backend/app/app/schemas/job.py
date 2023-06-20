@@ -1,11 +1,6 @@
 from datetime import timedelta, datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, ForwardRef, List, Optional, Union
-
-Scan = ForwardRef("Scan")
-
-if TYPE_CHECKING:
-    from .scan import Scan
+from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -55,7 +50,7 @@ class JobState(str, Enum):
 class Job(BaseModel):
     id: int
     job_type: JobType
-    scans: Optional[List[Scan]]
+    scanIds: Optional[List[int]]
     machine: str
     slurm_id: Optional[int]
     state: JobState = JobState.INITIALIZING
@@ -67,6 +62,11 @@ class Job(BaseModel):
 
     class Config:
         orm_mode = True
+
+    @classmethod
+    def from_orm(cls, obj) -> "Job":
+        scanIds = [scan.id for scan in obj.scans]
+        return cls(**obj.__dict__, scanIds=scanIds)
 
 
 class JobCreate(BaseModel):
@@ -84,8 +84,3 @@ class JobUpdate(BaseModel):
     scan_id: Optional[int]
     submit: Optional[datetime]
     notes: Optional[str]
-
-
-from .scan import Scan
-
-Job.update_forward_refs()

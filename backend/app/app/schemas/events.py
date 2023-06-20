@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel
 
@@ -41,6 +41,7 @@ class UpdateJobEvent(BaseModel):
     elapsed: Optional[timedelta]
     submit: Optional[datetime]
     notes: Optional[str]
+    scanIds: Optional[List[int]]
     event_type = JobEventType.UPDATED
 
     @classmethod
@@ -52,6 +53,7 @@ class UpdateJobEvent(BaseModel):
             elapsed=job.elapsed,
             output=job.output,
             notes=job.notes,
+            scanIds=job.scanIds,
         )
 
 

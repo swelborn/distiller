@@ -1,12 +1,7 @@
 import math
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, ForwardRef, List, Optional
-
-Job = ForwardRef("Job")
-
-if TYPE_CHECKING:
-    from .job import Job
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -54,7 +49,7 @@ class Scan(BaseModel):
     locations: List[Location]
     image_path: Optional[str]
     notes: Optional[str]
-    jobs: Optional[List[Job]]
+    jobIds: Optional[List[int]]
     metadata: Optional[Dict[str, Any]] = Field(alias="metadata_")
     microscope_id: int
     uuid: Optional[str]
@@ -63,6 +58,17 @@ class Scan(BaseModel):
 
     class Config:
         orm_mode = True
+
+    @classmethod
+    def from_orm(cls, obj) -> "Scan":
+        jobIds = [job.id for job in obj.jobs]
+        locations = [Location.from_orm(location) for location in obj.locations]
+
+        # Create a copy of the object's dictionary and remove the 'locations' entry.
+        obj_dict = obj.__dict__.copy()
+        obj_dict.pop("locations", None)
+
+        return cls(**obj_dict, jobIds=jobIds, locations=locations)
 
 
 class Scan4DCreate(BaseModel):
@@ -131,12 +137,6 @@ class ScanCreatedEvent(ScanEvent):
 
 class ScanUpdateEvent(ScanEvent):
     event_type = ScanEventType.UPDATED
-    jobs: Optional[List[Job]]
+    jobIds: Optional[List[int]]
     image_path: Optional[str]
     notes: Optional[str]
-
-
-from .job import Job
-
-Scan.update_forward_refs()
-ScanUpdateEvent.update_forward_refs()
