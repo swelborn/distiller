@@ -14,7 +14,7 @@ import {
   removeScan as removeScanAPI,
 } from './api';
 import { getJobScans as getJobScansAPI } from '../jobs/api';
-import { Scan, IdType, ScansRequestResult } from '../../types';
+import { Scan, IdType, ScansRequestResult, Job } from '../../types';
 import { DateTime } from 'luxon';
 
 export const scansAdapter = createEntityAdapter<Scan>();
@@ -33,7 +33,6 @@ const initialState: ScansState = scansAdapter.getInitialState({
 export const getScans = createAsyncThunk<
   ScansRequestResult,
   {
-    withJobs: boolean;
     skip: number;
     limit: number;
     start?: DateTime;
@@ -41,28 +40,28 @@ export const getScans = createAsyncThunk<
     microscopeId: IdType;
   }
 >('scans/fetch', async (_payload, _thunkAPI) => {
-  const { withJobs, skip, limit, start, end, microscopeId } = _payload;
-  const result = await getScansAPI(
-    microscopeId,
-    withJobs,
-    skip,
-    limit,
-    start,
-    end
-  );
+  const { skip, limit, start, end, microscopeId } = _payload;
+  const result = await getScansAPI(microscopeId, skip, limit, start, end);
 
-  return result;
+  // Transform the job to replace scans with scanIds
+  const scans: Scan[] = result.scans
+    ? result.scans.map((scan) => ({ ...scan, jobIds: [] }))
+    : [];
+
+  let totalCount = result.totalCount;
+
+  return { scans, totalCount };
 });
 
-export const getScan = createAsyncThunk<
-  Scan,
-  { id: IdType; withJobs: boolean }
->('scan/fetch', async (payload, _thunkAPI) => {
-  const { id, withJobs } = payload;
-  const scan = await getScanAPI(id, withJobs);
+export const getScan = createAsyncThunk<Scan, { id: IdType }>(
+  'scan/fetch',
+  async (payload, _thunkAPI) => {
+    const { id } = payload;
+    const scan = await getScanAPI(id);
 
-  return scan;
-});
+    return scan;
+  }
+);
 
 export const getJobScans = createAsyncThunk<
   Scan[],

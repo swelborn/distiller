@@ -165,12 +165,14 @@ const ScanPage: React.FC<Props> = () => {
     }
   }
 
-  let withJobs: boolean = false;
+  const scan = useAppSelector((state) =>
+    scansSelector.selectById(state, scanId)
+  );
 
   useEffect(() => {
-    dispatch(getScan({ id: scanId, withJobs: withJobs  }));
-    dispatch(getJobsByScanId({scanId: scanId}))
-  }, [dispatch, scanId, withJobs]);
+    dispatch(getScan({ id: scanId }));
+  }, [dispatch, scanId, scan]);
+
 
   useEffect(() => {
     dispatch(getNotebooks());

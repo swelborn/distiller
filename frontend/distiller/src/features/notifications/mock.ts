@@ -26,7 +26,7 @@ function makeCreatedEvent(id: IdType): ScanCreatedEvent {
         path: '/foo/bar',
       },
     ],
-    jobs: [],
+    jobIds: [-20, -30, -40],
   };
 }
 
@@ -64,7 +64,7 @@ async function mockScanUpdates(ws: WebSocket, id: IdType) {
 
   const job: Job = {
     id: 0,
-    scans: [],
+    scanIds: [],
     job_type: JobType.Count,
     slurm_id: 123,
     elapsed: 213,
@@ -81,7 +81,7 @@ async function mockScanUpdates(ws: WebSocket, id: IdType) {
     job.state = state;
     await sleep(2000);
     const ev: any = new Event('message');
-    ev.data = JSON.stringify(makeUpdatedEvent(id, { jobs: [job] }));
+    ev.data = JSON.stringify(makeUpdatedEvent(id, { jobIds: [id] }));
     ws.dispatchEvent(ev);
   }
 }

@@ -241,7 +241,6 @@ const ScansPage: React.FC<ScansPageProps> = ({
     }
   }
 
-  let withJobs: boolean = false;
   useEffect(() => {
     if (!shouldFetchScans || microscopeId === undefined) {
       return;
@@ -249,7 +248,6 @@ const ScansPage: React.FC<ScansPageProps> = ({
 
     dispatch(
       getScans({
-        withJobs: withJobs,
         skip: page * rowsPerPage,
         limit: rowsPerPage,
         start: startDateFilter || undefined,

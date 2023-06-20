@@ -1,5 +1,6 @@
 import { IdType, JobType, Job, JobsRequestResult, Scan } from '../../types';
 import { apiClient } from '../../client';
+import { DateTime } from 'luxon';
 
 export function createJob(
   type: JobType,
@@ -23,15 +24,13 @@ export function createJob(
 }
 
 export function getJobs(
-  withScans?: boolean,
   skip?: number,
   limit?: number,
   jobType?: JobType,
+  start?: DateTime,
+  end?: DateTime
 ): Promise<JobsRequestResult> {
   const params: any = {};
-  if (withScans !== undefined) {
-    params['with_scans'] = withScans;
-  }
   if (skip !== undefined) {
     params['skip'] = skip;
   }
@@ -40,6 +39,12 @@ export function getJobs(
   }
   if (jobType !== undefined) {
     params['job_type'] = jobType;
+  }
+  if (start !== undefined) {
+    params['start'] = start;
+  }
+  if (end !== undefined) {
+    params['end'] = end;
   }
 
   return apiClient

@@ -55,6 +55,7 @@ export interface JobUpdatedEvent extends JobEvent<JobEventType.Updated> {
   state?: JobState;
   output?: string;
   submit?: string;
+  scanIds?: IdType[];
 }
 
 export function isJobSubmitEvent(ev: any): ev is JobSubmitEvent {

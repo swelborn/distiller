@@ -32,22 +32,24 @@ const initialState: JobsState = jobsAdapter.getInitialState({
 export const getJobs = createAsyncThunk<
   JobsRequestResult,
   {
-    withScans: boolean;
     skip: number;
     limit: number;
+    jobType?: JobType;
+    start?: DateTime;
+    end?: DateTime;
   }
 >('jobs/fetch', async (_payload, _thunkAPI) => {
-  const { withScans, skip, limit } = _payload;
-  const result = await getJobsAPI(withScans, skip, limit);
+  const { skip, limit, jobType, start, end } = _payload;
+  const result = await getJobsAPI(skip, limit, jobType, start, end);
 
   return result;
 });
 
-export const getJob = createAsyncThunk<Job, { id: IdType; withScans: boolean }>(
+export const getJob = createAsyncThunk<Job, { id: IdType }>(
   'job/fetch',
   async (payload, _thunkAPI) => {
-    const { id, withScans } = payload;
-    const job = await getJobAPI(id, withScans);
+    const { id } = payload;
+    const job = await getJobAPI(id);
 
     return job;
   }
