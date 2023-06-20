@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
-import { keyframes, css } from '@emotion/react';
-import { useTheme } from '@mui/material/styles';
 import {
   Card,
   CardContent,
@@ -15,70 +13,13 @@ import OutputIcon from '@mui/icons-material/Terminal';
 
 import ScansPage from '../pages/scans';
 import styled from '@emotion/styled';
-import {
-  CompleteJobStates,
-  FailedJobStates,
-  IdType,
-  Job,
-  JobState,
-  PendingJobStates,
-  RunningJobStates,
-  Scan,
-} from '../types';
+import { IdType, Job, Scan } from '../types';
 import { DateTime } from 'luxon';
 import { fetchedJobIdsSelector, patchJob } from '../features/jobs';
 import { getScan, scansByJobIdSelector } from '../features/scans';
 import JobOutputDialog from './job-output';
 import { canonicalMicroscopeName } from '../utils/microscopes';
-
-interface RecordingIndicatorProps {
-  isVisible: boolean | null;
-  color: string;
-  hoverText: string;
-  isPulsing: boolean | null;
-}
-
-const RecordingIndicator = styled.div<RecordingIndicatorProps>`
-  display: ${({ isVisible }) => (isVisible ? 'block' : 'none')};
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: ${({ color }) => color};
-  animation: ${({ isPulsing }) =>
-    isPulsing
-      ? css`
-          ${keyframes`
-            0% {
-              opacity: 1;
-              transform: scale(1.1);
-            }
-            50% {
-              opacity: 0.5;
-              transform: scale(1);
-            }
-            100% {
-              opacity: 1;
-              transform: scale(1.1);
-            }
-          `} 2s infinite
-        `
-      : 'none'};
-  position: relative;
-
-  &:hover::after {
-    content: '${({ hoverText }) => hoverText}';
-    position: relative;
-    left: -8vw;
-    top: -2px;
-    white-space: nowrap;
-    background-color: #333;
-    color: #fff;
-    padding: 5px 5px;
-    border-radius: 5px;
-    font-size: 14px;
-    z-index: 1;
-  }
-`;
+import JobStateComponent from './job-state';
 
 interface HoverCardProps extends CardProps {
   isHoverable?: boolean;
@@ -121,7 +62,6 @@ const SessionCard = React.memo(
   }: SessionCardProps) => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
-    const theme = useTheme();
 
     const handleMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
       if (setHoveredJobId) setHoveredJobId(job.id);
@@ -134,28 +74,6 @@ const SessionCard = React.memo(
     const onSaveNotes = (id: IdType, notes: string) => {
       return dispatch(patchJob({ id, updates: { notes } }));
     };
-
-    // Job state
-    const getJobStateColor = (jobState: JobState) => {
-      if (PendingJobStates.has(jobState)) {
-        return theme.palette.warning.light;
-      } else if (RunningJobStates.has(jobState)) {
-        return theme.palette.success.main;
-      } else if (CompleteJobStates.has(jobState)) {
-        return theme.palette.primary.main;
-      } else if (FailedJobStates.has(jobState)) {
-        return theme.palette.error.main;
-      } else {
-        return theme.palette.primary.main; // Default color
-      }
-    };
-
-    const jobStateColor = job.state
-      ? getJobStateColor(job.state)
-      : 'defaultColor';
-
-    const isJobRunning = job.state && RunningJobStates.has(job.state);
-    const isJobPending = job.state && PendingJobStates.has(job.state);
 
     const [jobOutputDialog, setJobOutputDialog] = useState<Job | undefined>();
     const onJobOutputClick = (job: Job) => {
@@ -224,12 +142,7 @@ const SessionCard = React.memo(
             <Typography variant="h5" component="div">
               {job.id}
             </Typography>
-            <RecordingIndicator
-              isVisible={isJobRunning || isJobPending}
-              isPulsing={isJobRunning}
-              color={jobStateColor}
-              hoverText={`${job.state}`}
-            />
+            {job.state && <JobStateComponent state={job.state} />}
           </div>
           <div
             style={{
