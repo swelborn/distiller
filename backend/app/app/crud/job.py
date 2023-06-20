@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, noload
 
 from app import models, schemas
 from app.crud import scan as scan_crud
+from datetime import datetime
 
 
 def get_job(db: Session, id: int) -> Union[models.Job, None]:
@@ -25,6 +26,8 @@ def _get_jobs_query(
     db: Session,
     skip: int = 0,
     limit: int = 100,
+    start: Optional[datetime] = None,
+    end: Optional[datetime] = None,
     slurm_id: Optional[int] = None,
     job_type: Optional[schemas.JobType] = None,
 ):
@@ -36,6 +39,12 @@ def _get_jobs_query(
     if job_type is not None:
         query = query.filter(models.Job.job_type == job_type)
 
+    if start is not None:
+        query = query.filter(models.Job.submit > start)
+
+    if end is not None:
+        query = query.filter(models.Job.submit < end)
+
     return query
 
 
@@ -43,10 +52,12 @@ def get_jobs(
     db: Session,
     skip: int = 0,
     limit: int = 100,
+    start: Optional[datetime] = None,
+    end: Optional[datetime] = None,
     slurm_id: Optional[int] = None,
     job_type: Optional[schemas.JobType] = None,
 ):
-    query = _get_jobs_query(db, skip, limit, slurm_id, with_scans, job_type)
+    query = _get_jobs_query(db, skip, limit, start, end, slurm_id, job_type)
 
     return query.order_by(desc(models.Job.id)).offset(skip).limit(limit).all()
 
@@ -55,10 +66,12 @@ def get_jobs_count(
     db: Session,
     skip: int = 0,
     limit: int = 100,
+    start: Optional[datetime] = None,
+    end: Optional[datetime] = None,
     slurm_id: Optional[int] = None,
     job_type: Optional[schemas.JobType] = None,
 ):
-    query = _get_jobs_query(db, skip, limit, slurm_id, with_scans, job_type)
+    query = _get_jobs_query(db, skip, limit, start, end, slurm_id, job_type)
 
     return query.count()
 
