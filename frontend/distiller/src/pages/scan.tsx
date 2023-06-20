@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 
-import { useParams as useUrlParams, useNavigate } from 'react-router-dom';
+import {
+  useParams as useUrlParams,
+  useNavigate,
+  useParams,
+} from 'react-router-dom';
 
 import useLocalStorageState from 'use-local-storage-state';
 
@@ -59,7 +63,7 @@ import { fetchOrCreateNotebook } from '../features/notebooks/api';
 import { RemoveScanFilesConfirmDialog } from '../components/scan-confirm-dialog';
 import JobOutputDialog from '../components/job-output';
 import { isNil } from '../utils';
-import { SCANS } from '../routes';
+import { SCANS, SESSIONS } from '../routes';
 import { canRunJobs } from '../utils/machine';
 import MetadataComponent from '../components/metadata';
 import {
@@ -280,6 +284,19 @@ const ScanPage: React.FC<Props> = () => {
     navigate(`/${microscopeName}/${SCANS}/${scan?.prevScanId}`);
   };
 
+  const jobId = useParams().jobId;
+  const onNavigateBack = () => {
+    if (microscope === null) {
+      return;
+    }
+    const microscopeName = canonicalMicroscopeName(microscope.name);
+    if (jobId) {
+      navigate(`/${microscopeName}/${SESSIONS}/${jobId}`);
+    } else {
+      navigate(`/${microscopeName}/${SCANS}`);
+    }
+  };
+
   if (scan === undefined || microscope === null) {
     return null;
   }
@@ -312,10 +329,10 @@ const ScanPage: React.FC<Props> = () => {
       <Card sx={{ marginBottom: '2rem' }}>
         <CardContent>
           <IconButton
-            onClick={() => navigate(-1)} // Go back by one in the history stack
+            onClick={onNavigateBack}
             size="small"
             color="primary"
-            sx={{ mb: 2 }} // add some margin-bottom or as per your need
+            sx={{ mb: 2 }}
           >
             <ArrowBackIcon />
           </IconButton>

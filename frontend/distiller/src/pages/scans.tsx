@@ -59,6 +59,7 @@ import { canonicalMicroscopeName } from '../utils/microscopes';
 
 import { useUrlState, Serializer, Deserializer } from '../routes/url-state';
 import { RootState } from '../app/store';
+import { SCANS } from '../routes';
 
 const TableHeaderCell = styled(TableCell)(({ theme }) => ({
   fontWeight: 600,
@@ -152,6 +153,7 @@ export interface ScansPageProps {
   showTablePagination?: boolean;
   showDiskUsage?: boolean;
   shouldFetchScans?: boolean;
+  onScanClick?: (event: React.MouseEvent, scan: Scan) => void;
 }
 
 const ScansPage: React.FC<ScansPageProps> = ({
@@ -160,6 +162,7 @@ const ScansPage: React.FC<ScansPageProps> = ({
   showTablePagination = true,
   showDiskUsage = true,
   shouldFetchScans = true,
+  onScanClick,
 }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -300,9 +303,13 @@ const ScansPage: React.FC<ScansPageProps> = ({
     setMaximizeImg(false);
   };
 
-  const onScanClick = (scan: Scan) => {
-    navigate(`scans/${scan.id}`);
+  const defaultOnScanClick = (event: React.MouseEvent, scan: Scan) => {
+    const canonicalName = canonicalMicroscopeName(microscopeName as string);
+    navigate(`/${canonicalName}/${SCANS}/${scan.id}`);
   };
+
+  const handleScanClick = onScanClick || defaultOnScanClick;
+
   const onChangePage = (
     event: React.MouseEvent<HTMLButtonElement> | null,
     page: number
@@ -609,7 +616,7 @@ const ScansPage: React.FC<ScansPageProps> = ({
                 <TableScanRow
                   key={scan.id}
                   hover
-                  onClick={() => onScanClick(scan)}
+                  onClick={(event) => handleScanClick(event, scan)}
                 >
                   <TableCell className="selectCheckbox" padding="checkbox">
                     <Checkbox

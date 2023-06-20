@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { keyframes, css } from '@emotion/react';
 import { useTheme } from '@mui/material/styles';
@@ -17,11 +17,13 @@ import {
   JobState,
   PendingJobStates,
   RunningJobStates,
+  Scan,
 } from '../types';
 import { DateTime } from 'luxon';
 import { fetchedJobIdsSelector, patchJob } from '../features/jobs';
 import { getScan, scansByJobIdSelector } from '../features/scans';
 import JobOutputDialog from './job-output';
+import { canonicalMicroscopeName } from '../utils/microscopes';
 
 interface RecordingIndicatorProps {
   isVisible: boolean | null;
@@ -176,12 +178,21 @@ const SessionCard = React.memo(
       });
     }, [dispatch, job, scans]);
 
+    // Navigation
+    const microscopeName = useParams().microscope;
+    const onScanClick = (event: React.MouseEvent, scan: Scan) => {
+      event.stopPropagation();
+      const canonicalName = canonicalMicroscopeName(microscopeName as string);
+      navigate(`/${canonicalName}/sessions/${job.id}/scans/${scan.id}`);
+    };
+
     const scansPageProps = {
       selector: scansByJobIdSelector(job.id),
       showScansToolbar: false,
       showTablePagination: false,
       showDiskUsage: false,
       shouldFetchScans: false,
+      onScanClick: onScanClick,
     };
 
     const fetchedJobIds = useAppSelector(fetchedJobIdsSelector);
