@@ -159,6 +159,68 @@ export const jobsExistInStore = (state: RootState, jobIds: IdType[]) => {
   return jobsInState.every((job) => job !== undefined);
 };
 
+export const selectJobsByPage = (
+  page: number,
+  itemsPerPage: number,
+  jobType: JobType | null
+) => {
+  return createSelector(jobState, (state) => {
+    const start = page * itemsPerPage;
+    const end = start + itemsPerPage;
+    const pageIds = state.ids.slice(start, end);
+
+    let jobs = pageIds
+      .map((id) => state.entities[id]!)
+      .filter((job) => job !== undefined);
+
+    // If jobType is defined, filter jobs by job type
+    if (jobType) {
+      jobs = jobs.filter((job) => job.job_type === jobType);
+    }
+
+    return jobs;
+  });
+};
+
+export const selectJobsByDate = (
+  startDateFilter: DateTime | null,
+  endDateFilter: DateTime | null,
+  jobType: JobType | null
+) => {
+  return createSelector(
+    [jobState, (state: RootState) => state],
+    (jobsState, state) => {
+      let jobs = Object.values(jobsState.entities) as Job[];
+
+      // If both filters are null, return all jobs
+      if (!startDateFilter && !endDateFilter && !jobType) {
+        return jobs;
+      }
+
+      // If start date is defined, filter jobs submitted after start date
+      if (startDateFilter) {
+        jobs = jobs.filter(
+          (job) => job.submit && DateTime.fromISO(job.submit) >= startDateFilter
+        );
+      }
+
+      // If end date is defined, filter jobs submitted before end date
+      if (endDateFilter) {
+        jobs = jobs.filter(
+          (job) => job.submit && DateTime.fromISO(job.submit) <= endDateFilter
+        );
+      }
+
+      // If jobType is defined, filter jobs by job type
+      if (jobType) {
+        jobs = jobs.filter((job) => job.job_type === jobType);
+      }
+
+      return jobs;
+    }
+  );
+};
+
 export const totalCount = (state: RootState) => state.jobs.totalCount;
 
 export const { setJob, updateJob } = jobsSlice.actions;
