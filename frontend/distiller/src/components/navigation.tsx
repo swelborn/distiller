@@ -5,10 +5,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import BottomNavigation from '@mui/material/BottomNavigation';
 import BottomNavigationAction from '@mui/material/BottomNavigationAction';
 import ScansIcon from '@mui/icons-material/List';
+import { Home } from '@mui/icons-material';
 import StreamIcon from '@mui/icons-material/Stream';
-import { HOME_PATH, SESSIONS_PATH } from '../routes';
+import { HOME_PATH, SCANS_PATH, SESSIONS_PATH } from '../routes';
 
-type NavPath = {
+export type NavPath = {
   pathname: string;
   icon: React.ReactNode;
   label: string;
@@ -16,7 +17,8 @@ type NavPath = {
 
 const PATHS: { [name: string]: NavPath } = (
   [
-    { pathname: HOME_PATH, icon: <ScansIcon />, label: 'Home' },
+    { pathname: HOME_PATH, icon: <Home />, label: 'Home' },
+    { pathname: SCANS_PATH, icon: <ScansIcon />, label: 'Scans' },
     { pathname: SESSIONS_PATH, icon: <StreamIcon />, label: 'Sessions' },
   ] as const
 ).reduce((paths, path) => {
