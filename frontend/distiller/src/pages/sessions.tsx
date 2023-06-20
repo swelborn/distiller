@@ -8,8 +8,6 @@ import {
   List,
   TablePagination,
   Divider,
-  Switch,
-  FormControlLabel,
   Chip,
   Fab,
   ListItem,
@@ -100,7 +98,6 @@ const SessionsPage: React.FC = () => {
 
   // Job-related state management
   const [hoveredJobId, setHoveredJobId] = useState<IdType | null>(null);
-  const [enablePreview, setEnablePreview] = useState<boolean>(true);
   const jobsGroupedByDate = groupBy(jobs, (job) =>
     job.submit ? DateTime.fromISO(job.submit).toISO().split('T')[0] : undefined
   );
@@ -162,9 +159,6 @@ const SessionsPage: React.FC = () => {
     [setPage, setEndDateFilter]
   );
 
-  const handleTogglePreview = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setEnablePreview(event.target.checked);
-  };
   const allowRunningJobs = () => {
     let canRun = false;
     for (let m of machines) {
@@ -180,15 +174,11 @@ const SessionsPage: React.FC = () => {
 
   // Effects
   useEffect(() => {
-    if (
-      hoveredJobId !== null &&
-      enablePreview &&
-      !fetchedJobIds.includes(hoveredJobId)
-    ) {
+    if (hoveredJobId !== null && !fetchedJobIds.includes(hoveredJobId)) {
       dispatch(getJobScans({ jobId: hoveredJobId }));
       dispatch(addFetchedJobId(hoveredJobId));
     }
-  }, [dispatch, hoveredJobId, enablePreview, fetchedJobIds]);
+  }, [dispatch, hoveredJobId, fetchedJobIds]);
 
   useEffect(() => {
     if (microscopeId === undefined) return;
@@ -260,16 +250,6 @@ const SessionsPage: React.FC = () => {
               />
               {index === 0 && (
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={enablePreview}
-                        onChange={handleTogglePreview}
-                        color="primary"
-                      />
-                    }
-                    label="Enable Preview"
-                  />
                   <ScansToolbar
                     startDate={startDateFilter}
                     endDate={endDateFilter}
@@ -290,7 +270,6 @@ const SessionsPage: React.FC = () => {
                     key={job.id}
                     job={job}
                     setHoveredJobId={setHoveredJobId}
-                    showScans={enablePreview}
                     isHoverable={true}
                     compactMode={true}
                   />

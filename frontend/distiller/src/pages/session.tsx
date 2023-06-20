@@ -51,14 +51,7 @@ const SessionPage: React.FC = () => {
       <IconButton onClick={onNavigateBack} color="primary">
         <ArrowBackIcon />
       </IconButton>
-      {job && (
-        <SessionCard
-          job={job}
-          isHoverable={false}
-          showScans={true}
-          compactMode={false}
-        />
-      )}
+      {job && <SessionCard job={job} isHoverable={false} compactMode={false} />}
     </React.Fragment>
   );
 };

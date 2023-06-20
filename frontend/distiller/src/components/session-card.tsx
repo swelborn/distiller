@@ -20,6 +20,7 @@ import { getScan, scansByJobIdSelector } from '../features/scans';
 import JobOutputDialog from './job-output';
 import { canonicalMicroscopeName } from '../utils/microscopes';
 import JobStateComponent from './job-state';
+import ImageGallery from './image-gallery';
 
 interface HoverCardProps extends CardProps {
   isHoverable?: boolean;
@@ -46,20 +47,13 @@ const HoverCard = styled(({ isHoverable, ...props }: HoverCardProps) => (
 interface SessionCardProps {
   job: Job;
   setHoveredJobId?: React.Dispatch<React.SetStateAction<IdType | null>>;
-  showScans?: boolean;
   isHoverable?: boolean | undefined;
   compactMode?: boolean | undefined | null;
 }
 
 // SessionCard Component
 const SessionCard = React.memo(
-  ({
-    job,
-    setHoveredJobId,
-    showScans,
-    isHoverable,
-    compactMode,
-  }: SessionCardProps) => {
+  ({ job, setHoveredJobId, isHoverable, compactMode }: SessionCardProps) => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
 
@@ -179,21 +173,13 @@ const SessionCard = React.memo(
           </div>
           {fetchedJobIds?.includes(job.id) ? (
             scans.length > 0 ? (
-              showScans && (
-                <div
-                  style={
-                    compactMode
-                      ? {
-                          maxHeight: '50vh',
-                          overflowY: 'auto',
-                          padding: '1%',
-                        }
-                      : {}
-                  }
-                >
-                  <ScansPage {...scansPageProps}></ScansPage>
-                </div>
-              )
+              <div>
+                {compactMode ? (
+                  <ImageGallery scans={scans} />
+                ) : (
+                  <ScansPage {...scansPageProps} />
+                )}
+              </div>
             ) : (
               <Card>
                 <CardContent>
