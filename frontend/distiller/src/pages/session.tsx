@@ -12,7 +12,7 @@ import {
 } from '../features/jobs';
 import SessionCard from '../components/session-card';
 
-const SessionPage: React.FC = ({}) => {
+const SessionPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -29,7 +29,7 @@ const SessionPage: React.FC = ({}) => {
       dispatch(getJobScans({ jobId: job.id }));
       dispatch(addFetchedJobId(job.id));
     }
-  }, [dispatch, fetchedJobIds]);
+  }, [dispatch, fetchedJobIds, job, jobId]);
 
   return (
     <React.Fragment>

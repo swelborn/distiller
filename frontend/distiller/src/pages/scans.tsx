@@ -268,6 +268,7 @@ const ScansPage: React.FC<ScansPageProps> = ({
     startDateFilter,
     endDateFilter,
     microscopeId,
+    shouldFetchScans,
   ]);
 
   useEffect(() => {

@@ -201,7 +201,15 @@ const SessionsPage: React.FC = () => {
         end: endDateFilter || undefined,
       })
     );
-  }, [dispatch, page, rowsPerPage]);
+  }, [
+    dispatch,
+    page,
+    rowsPerPage,
+    startDateFilter,
+    endDateFilter,
+    jobType,
+    microscopeId,
+  ]);
 
   useEffect(() => {
     if (microscopeId === undefined) return;

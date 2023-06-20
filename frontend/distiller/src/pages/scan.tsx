@@ -193,7 +193,7 @@ const ScanPage: React.FC<Props> = () => {
       // If any job is not in the store, fetch the jobs for the scan
       dispatch(getScanJobs({ scanId: scan.id }));
     }
-  }, [dispatch, scanId, scan, jobIds]);
+  }, [dispatch, scanId, scan, allJobsInStore]);
 
   useEffect(() => {
     dispatch(getNotebooks());
@@ -427,7 +427,7 @@ const ScanPage: React.FC<Props> = () => {
           {notebooks &&
             notebooks.map((name: string) => {
               return (
-                <Box sx={{ m: 1, position: 'relative' }}>
+                <Box key={name} sx={{ m: 1, position: 'relative' }}>
                   <Button
                     key={name}
                     onClick={() => onLaunchNotebook(name)}

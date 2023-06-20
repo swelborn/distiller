@@ -3,18 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { keyframes, css } from '@emotion/react';
 import { useTheme } from '@mui/material/styles';
-import {
-  Card,
-  CardContent,
-  IconButton,
-  ListItem,
-  Typography,
-} from '@mui/material';
+import { Card, CardContent, IconButton, Typography } from '@mui/material';
 import EditableField from './editable-field';
-import SessionPage from '../pages/session';
 import OutputIcon from '@mui/icons-material/Terminal';
 
-import ScansPage, { ScansPageProps } from '../pages/scans';
+import ScansPage from '../pages/scans';
 import styled from '@emotion/styled';
 import {
   CompleteJobStates,
@@ -26,12 +19,8 @@ import {
   RunningJobStates,
 } from '../types';
 import { DateTime } from 'luxon';
-import {
-  addFetchedJobId,
-  fetchedJobIdsSelector,
-  patchJob,
-} from '../features/jobs';
-import { getJobScans, getScan, scansByJobIdSelector } from '../features/scans';
+import { fetchedJobIdsSelector, patchJob } from '../features/jobs';
+import { getScan, scansByJobIdSelector } from '../features/scans';
 import JobOutputDialog from './job-output';
 
 interface RecordingIndicatorProps {
@@ -158,8 +147,6 @@ const SessionCard = React.memo(
 
     const isJobRunning = job.state && RunningJobStates.has(job.state);
     const isJobPending = job.state && PendingJobStates.has(job.state);
-    const isJobComplete = job.state && CompleteJobStates.has(job.state);
-    const isJobFailed = job.state && FailedJobStates.has(job.state);
 
     const [jobOutputDialog, setJobOutputDialog] = useState<Job | undefined>();
     const onJobOutputClick = (job: Job) => {

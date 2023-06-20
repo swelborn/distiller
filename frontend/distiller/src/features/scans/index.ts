@@ -14,7 +14,7 @@ import {
   removeScan as removeScanAPI,
 } from './api';
 import { getJobScans as getJobScansAPI } from '../jobs/api';
-import { Scan, IdType, ScansRequestResult, Job } from '../../types';
+import { Scan, IdType, ScansRequestResult } from '../../types';
 import { DateTime } from 'luxon';
 
 export const scansAdapter = createEntityAdapter<Scan>();

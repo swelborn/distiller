@@ -5,7 +5,7 @@ import Button from '@mui/material/Button';
 import ScansIcon from '@mui/icons-material/List';
 import StreamIcon from '@mui/icons-material/Stream';
 
-import { SESSIONS_PATH, SCANS, SCANS_PATH, SESSIONS } from '../routes';
+import { SESSIONS_PATH, SCANS_PATH } from '../routes';
 import { NavPath } from '../components/navigation';
 
 const Container = styled('div')({

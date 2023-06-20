@@ -1,7 +1,6 @@
 import {
   IdType,
   Job,
-  JobType,
   JobState,
   Scan,
   ScanLocation,
