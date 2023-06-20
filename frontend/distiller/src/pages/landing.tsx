@@ -7,15 +7,16 @@ import StreamIcon from '@mui/icons-material/Stream';
 
 import { SESSIONS_PATH, SCANS_PATH } from '../routes';
 import { NavPath } from '../components/navigation';
+import { Box } from '@mui/material';
 
-const Container = styled('div')({
+const Container = styled(Box)(({ theme }) => ({
   display: 'flex',
+  flexDirection: 'row',
   justifyContent: 'center',
   alignItems: 'center',
-  flexDirection: 'column',
-  height: '100vh',
-  overflow: 'hidden',
-});
+  height: '60vh',
+  backgroundColor: 'transparent',
+}));
 
 const LargeIcon = styled('div')({
   fontSize: '3em',
@@ -64,5 +65,4 @@ const LandingPage: React.FC = () => {
     </Container>
   );
 };
-
 export default LandingPage;

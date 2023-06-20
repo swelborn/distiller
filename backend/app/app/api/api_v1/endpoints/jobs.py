@@ -1,4 +1,5 @@
 from typing import List, cast, Union
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
@@ -25,6 +26,11 @@ async def create_job(job_create: schemas.JobCreate, db: Session = Depends(get_db
         job_update = schemas.JobUpdate(scan_id=scan_id)
         (updated, job) = crud.update_job(db, cast(int, job.id), job_update)
 
+    db.refresh(job)
+
+    # DELETE LATER
+    job_update = schemas.JobUpdate(submit=datetime.utcnow())
+    (updated, job) = crud.update_job(db, cast(int, job.id), job_update)
     db.refresh(job)
 
     job = crud.get_job(db, job.id)
