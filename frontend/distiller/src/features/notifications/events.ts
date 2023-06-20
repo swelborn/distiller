@@ -1,4 +1,12 @@
-import { IdType, Job, JobType, JobState, Scan, ScanLocation, Microscope } from '../../types';
+import {
+  IdType,
+  Job,
+  JobType,
+  JobState,
+  Scan,
+  ScanLocation,
+  Microscope,
+} from '../../types';
 
 export enum ScanEventType {
   Created = 'scan.created',
@@ -7,7 +15,7 @@ export enum ScanEventType {
 
 export enum JobEventType {
   Submit = 'job.submit',
-  Updated = 'job.updated'
+  Updated = 'job.updated',
 }
 
 export enum MicroscopeEventType {
@@ -61,7 +69,6 @@ export interface JobUpdatedEvent extends JobEvent<JobEventType.Updated> {
 export function isJobSubmitEvent(ev: any): ev is JobSubmitEvent {
   return ev && ev.event_type === JobEventType.Submit;
 }
-
 
 export function isJobUpdatedEvent(ev: any): ev is JobUpdatedEvent {
   return ev && ev.event_type === JobEventType.Updated;

@@ -70,9 +70,8 @@ export const getJobScans = createAsyncThunk<
   }
 >('scans/fetchByJobId', async (payload, _thunkAPI) => {
   const { jobId } = payload;
-  const result = await getJobScansAPI(jobId);
-
-  return result;
+  const scans = await getJobScansAPI(jobId);
+  return scans;
 });
 
 export const patchScan = createAsyncThunk<
@@ -131,13 +130,15 @@ export const scansSlice = createSlice({
       })
       .addCase(getScans.fulfilled, (state, action) => {
         const { totalCount, scans } = action.payload;
-
         state.status = 'complete';
         state.totalCount = totalCount;
         scansAdapter.setAll(state, scans);
       })
       .addCase(getScan.fulfilled, (state, action) => {
         scansAdapter.setOne(state, action.payload);
+      .addCase(getJobScans.fulfilled, (state, action) => {
+        const scans = action.payload;
+        scansAdapter.upsertMany(state, scans);
       })
       .addCase(patchScan.fulfilled, (state, action) => {
         const update = {
@@ -148,9 +149,6 @@ export const scansSlice = createSlice({
       })
       .addCase(removeScan.fulfilled, (state, action) => {
         scansAdapter.removeOne(state, action.payload);
-      })
-      .addCase(getJobScans.fulfilled, (state, action) => {
-        scansAdapter.setAll(state, action.payload);
       });
   },
 });

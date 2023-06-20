@@ -29,7 +29,6 @@ class NotificationHub {
       try {
         msg = JSON.parse(ev.data);
       } catch {}
-
       if (isScanCreatedEvent(msg)) {
         const scan = { ...msg, jobIds: [] };
         dispatch(setScan(scan));

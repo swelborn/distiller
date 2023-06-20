@@ -75,7 +75,6 @@ export function getScan(id: IdType): Promise<Scan> {
 }
 
 export function getScanJobs(id: IdType): Promise<Job[]> {
-
   return apiClient
     .get({
       url: `scans/${id}/jobs`,

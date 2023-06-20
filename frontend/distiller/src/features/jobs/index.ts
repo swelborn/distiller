@@ -55,16 +55,16 @@ export const getJob = createAsyncThunk<Job, { id: IdType }>(
   }
 );
 
-export const getJobsByScanId = createAsyncThunk<
+export const getScanJobs = createAsyncThunk<
   Job[],
   {
     scanId: IdType;
   }
 >('jobs/fetchByScanId', async (payload, _thunkAPI) => {
   const { scanId } = payload;
-  const result = await getScanJobsAPI(scanId);
+  const jobs = await getScanJobsAPI(scanId);
 
-  return result;
+  return jobs;
 });
 
 export const patchJob = createAsyncThunk<
@@ -72,18 +72,17 @@ export const patchJob = createAsyncThunk<
   { id: IdType; updates: Partial<Job> }
 >('jobs/patch', async (payload, _thunkAPI) => {
   const { id, updates } = payload;
-  const scan = await patchJobAPI(id, updates);
+  const job = await patchJobAPI(id, updates);
 
-  return scan;
+  return job;
 });
 
 export const cancelJob = createAsyncThunk<Job, { id: IdType }>(
   'jobs/delete',
   async (payload, _thunkAPI) => {
     const { id } = payload;
-    const scan = await cancelJobAPI(id);
-
-    return scan;
+    const job = await cancelJobAPI(id);
+    return job;
   }
 );
 
@@ -122,11 +121,11 @@ export const jobsSlice = createSlice({
       .addCase(getJob.fulfilled, (state, action) => {
         jobsAdapter.setOne(state, action.payload);
       })
-      .addCase(getJobsByScanId.fulfilled, (state, action) => {
-        state.status = 'complete';
-        jobsAdapter.setAll(state, action.payload);
-      .addCase(cancelJob.fulfilled, (state, action) => {
-        jobsAdapter.setOne(state, action.payload);
+
+      .addCase(getScanJobs.fulfilled, (state, action) => {
+        const jobs = action.payload;
+        jobsAdapter.upsertMany(state, jobs);
+      })
       });
   },
 });
@@ -136,6 +135,7 @@ export const jobsSelector = jobsAdapter.getSelectors<RootState>(
 );
 
 const jobState = (rootState: RootState) => rootState.jobs;
+
 const { selectById, selectAll } = jobsAdapter.getSelectors();
 export const jobSelector = (id: IdType) => {
   return createSelector(jobState, (state) => selectById(state, id));
