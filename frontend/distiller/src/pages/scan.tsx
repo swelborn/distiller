@@ -37,7 +37,11 @@ import { DateTime } from 'luxon';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { staticURL } from '../client';
 import { getScan, scansSelector, patchScan } from '../features/scans';
-import { getJobsByScanId, allJobsSelector } from '../features/jobs';
+import {
+  getScanJobs,
+  jobsByScanIdSelector,
+  jobsExistInStore,
+} from '../features/jobs';
 import { getNotebooks, selectNotebooks } from '../features/notebooks';
 import {
   machineState,
@@ -168,11 +172,28 @@ const ScanPage: React.FC<Props> = () => {
   const scan = useAppSelector((state) =>
     scansSelector.selectById(state, scanId)
   );
+  const jobs = useAppSelector(jobsByScanIdSelector(scanId));
 
+  // Here we get the jobIds from the scan if it exists, otherwise an empty array
+  const jobIds = scan?.jobIds || [];
+
+  // Check if all jobs are in the store
+  const allJobsInStore = useAppSelector((state) =>
+    jobsExistInStore(state, jobIds)
+  );
+
+  // This effect handles fetching the scan
   useEffect(() => {
     dispatch(getScan({ id: scanId }));
   }, [dispatch, scanId, scan]);
 
+  // This effect handles fetching jobs related to the scan
+  useEffect(() => {
+    if (scan && !allJobsInStore) {
+      // If any job is not in the store, fetch the jobs for the scan
+      dispatch(getScanJobs({ scanId: scan.id }));
+    }
+  }, [dispatch, scanId, scan, jobIds]);
 
   useEffect(() => {
     dispatch(getNotebooks());
@@ -238,12 +259,6 @@ const ScanPage: React.FC<Props> = () => {
       });
     });
   };
-
-  const scan = useAppSelector((state) =>
-    scansSelector.selectById(state, scanId)
-  );
-
-  const jobs = useAppSelector(allJobsSelector);
 
   const notebooks = useAppSelector((state) => selectNotebooks(state));
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -32,9 +32,9 @@ import { useAppDispatch, useAppSelector } from '../app/hooks';
 import {
   getScans,
   patchScan,
-  scansSelector,
   totalCount,
   removeScan,
+  selectScansByPage,
 } from '../features/scans';
 import EditableField from '../components/editable-field';
 import { IdType, Microscope, Scan } from '../types';
@@ -155,13 +155,12 @@ export interface ScansPageProps {
 }
 
 const ScansPage: React.FC<ScansPageProps> = ({
-  selector = scansSelector.selectAll,
+  selector,
   showScansToolbar = true,
   showTablePagination = true,
   showDiskUsage = true,
   shouldFetchScans = true,
 }) => {
-  const scans = useAppSelector(selector);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const totalScans = useAppSelector(totalCount);
@@ -185,6 +184,13 @@ const ScansPage: React.FC<ScansPageProps> = ({
     intSerializer,
     intDeserializer
   );
+
+  const defaultSelector = useMemo(
+    () => selectScansByPage(page, rowsPerPage),
+    [page, rowsPerPage]
+  );
+
+  const scans = useAppSelector(selector || defaultSelector);
   const [scanToDelete, setScanToDelete] = React.useState<Scan | null>(null);
   const [scanFilesToRemove, setScanFilesToRemove] = React.useState<Scan | null>(
     null

@@ -12,8 +12,8 @@ import {
   patchJob as patchJobAPI,
   cancelJob as cancelJobAPI,
 } from './api';
-import { Job, IdType, JobsRequestResult } from '../../types';
 import { getScanJobs as getScanJobsAPI } from '../scans/api';
+import { Job, IdType, JobsRequestResult, JobType } from '../../types';
 import { DateTime } from 'luxon';
 
 export const jobsAdapter = createEntityAdapter<Job>();
@@ -116,12 +116,12 @@ export const jobsSlice = createSlice({
         const { totalCount, jobs } = action.payload;
         state.status = 'complete';
         state.totalCount = totalCount;
-        jobsAdapter.setAll(state, jobs);
+        jobsAdapter.upsertMany(state, jobs);
       })
       .addCase(getJob.fulfilled, (state, action) => {
-        jobsAdapter.setOne(state, action.payload);
+        const job = action.payload;
+        jobsAdapter.upsertOne(state, job);
       })
-
       .addCase(getScanJobs.fulfilled, (state, action) => {
         const jobs = action.payload;
         jobsAdapter.upsertMany(state, jobs);
@@ -142,6 +142,22 @@ export const jobSelector = (id: IdType) => {
 };
 
 export const allJobsSelector = createSelector(jobState, selectAll);
+
+export const jobsByScanIdSelector = (scanId: IdType) => {
+  return createSelector(jobState, (state) => {
+    return Object.values(state.entities).filter(
+      (job): job is Job =>
+        job !== undefined && job.scanIds && job.scanIds.includes(scanId)
+    );
+  });
+};
+
+export const jobsExistInStore = (state: RootState, jobIds: IdType[]) => {
+  const jobsInState = jobIds.map((id) =>
+    jobsAdapter.getSelectors().selectById(state.jobs, id)
+  );
+  return jobsInState.every((job) => job !== undefined);
+};
 
 export const totalCount = (state: RootState) => state.jobs.totalCount;
 

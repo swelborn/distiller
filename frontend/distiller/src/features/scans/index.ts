@@ -132,10 +132,12 @@ export const scansSlice = createSlice({
         const { totalCount, scans } = action.payload;
         state.status = 'complete';
         state.totalCount = totalCount;
-        scansAdapter.setAll(state, scans);
+        scansAdapter.upsertMany(state, scans);
       })
       .addCase(getScan.fulfilled, (state, action) => {
-        scansAdapter.setOne(state, action.payload);
+        const scan = action.payload;
+        scansAdapter.upsertOne(state, scan);
+      })
       .addCase(getJobScans.fulfilled, (state, action) => {
         const scans = action.payload;
         scansAdapter.upsertMany(state, scans);
@@ -166,5 +168,23 @@ export const scanSelector = (id: IdType) => {
 export const totalCount = (state: RootState) => state.scans.totalCount;
 
 export const { setScan, updateScan } = scansSlice.actions;
+
+export const scansByJobIdSelector = (jobId: IdType) => {
+  return createSelector(scanState, (state) => {
+    return Object.values(state.entities).filter(
+      (scan): scan is Scan =>
+        scan !== undefined && scan.jobIds && scan.jobIds.includes(jobId)
+    );
+  });
+};
+
+export const selectScansByPage = (page: number, itemsPerPage: number) => {
+  return createSelector(scanState, (state) => {
+    const start = page * itemsPerPage;
+    const end = start + itemsPerPage;
+    const pageIds = state.ids.slice(start, end);
+    return pageIds.map((id) => state.entities[id]!);
+  });
+};
 
 export default scansSlice.reducer;
