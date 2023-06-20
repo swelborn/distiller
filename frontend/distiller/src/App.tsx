@@ -23,6 +23,7 @@ import {
   StyledEngineProvider,
   createTheme,
 } from '@mui/material/styles';
+import LandingPage from './pages/landing';
 
 const theme = createTheme();
 
@@ -78,10 +79,18 @@ function App() {
                     }
                   />
                   <Route
-                    path={'/:microscope'}
+                    path={`/:microscope/${SCANS}`}
                     element={
                       <PrivateRoute>
                         <ScansPage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path={`/:microscope`}
+                    element={
+                      <PrivateRoute>
+                        <LandingPage />
                       </PrivateRoute>
                     }
                   />
@@ -93,15 +102,14 @@ function App() {
                   <Route path={SCANS_PATH} element={<DefaultMicroscope />} />
                   <Route path={AUTH_PATH} element={<AuthPage />} />
                   <Route path={HOME_PATH} element={<DefaultMicroscope />} />
-                  
                 </Routes>
               </div>
               <div className="navigation">
                 <NavigationComponent />
               </div>
-              <div className="footer">
-                <FooterComponent />
-              </div>
+            </div>
+            <div className="footer">
+              <FooterComponent />
             </div>
           </div>
         </Router>
