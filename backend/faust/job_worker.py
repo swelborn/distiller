@@ -612,7 +612,7 @@ async def monitor_jobs():
 
                 try:
                     await update_job(
-                        session, id, job.state, elapsed=job.elapsed, output=output
+                        session, id, job.state, elapsed=job.elapsed, output=output, submit=job.submit
                     )
                 except aiohttp.client_exceptions.ClientResponseError as ex:
                     # Ignore 404, this is not a job we created.
