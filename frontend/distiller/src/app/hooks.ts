@@ -8,9 +8,8 @@ export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 
 export const useShouldShowNavigation = () => {
   const location = useLocation();
-  const showNavigation = ![AUTH_PATH, HOME_PATH, '/4dcamera/'].includes(
-    location.pathname
-  );
+
+  const showNavigation = ![AUTH_PATH, HOME_PATH].includes(location.pathname);
 
   return showNavigation;
 };

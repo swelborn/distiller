@@ -30,7 +30,6 @@ import {
   StyledEngineProvider,
   createTheme,
 } from '@mui/material/styles';
-import LandingPage from './pages/landing';
 
 const theme = createTheme();
 
@@ -82,10 +81,10 @@ const NavigationAndRoutes: React.FC = () => {
             }
           />
           <Route
-            path={`/:microscope`}
+            path={`/:microscope/`}
             element={
               <PrivateRoute>
-                <LandingPage />
+                <ScansPage />
               </PrivateRoute>
             }
           />
