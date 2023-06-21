@@ -101,7 +101,8 @@ const SessionsPage: React.FC = () => {
   // Job-related state management
   const [hoveredJobId, setHoveredJobId] = useState<IdType | null>(null);
   const jobsGroupedByDate = groupBy(jobs, (job) =>
-    job.submit ? DateTime.fromISO(job.submit).toISO().split('T')[0] : null
+    // @ts-ignore: Object is possibly 'null'.
+    job.submit ? DateTime.fromISO(job.submit)?.toISO()?.split('T')[0] : null
   );
 
   // Machine-related state management
