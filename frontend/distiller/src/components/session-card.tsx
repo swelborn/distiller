@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import {
+  Button,
   Card,
   CardContent,
   CardProps,
@@ -13,14 +14,22 @@ import OutputIcon from '@mui/icons-material/Terminal';
 
 import ScansPage from '../pages/scans';
 import styled from '@emotion/styled';
-import { IdType, Job, Scan } from '../types';
+import {
+  IdType,
+  Job,
+  PendingJobStates,
+  RunningJobStates,
+  Scan,
+} from '../types';
 import { DateTime } from 'luxon';
 import { fetchedJobIdsSelector, patchJob } from '../features/jobs';
-import { getScan, scansByJobIdSelector } from '../features/scans';
+import { scansByJobIdSelector } from '../features/scans';
 import JobOutputDialog from './job-output';
 import { canonicalMicroscopeName } from '../utils/microscopes';
 import JobStateComponent from './job-state';
 import ImageGallery from './image-gallery';
+import { cancelJob } from '../features/jobs';
+import { CircularProgress } from '@mui/material';
 
 interface HoverCardProps extends CardProps {
   isHoverable?: boolean;
@@ -69,8 +78,11 @@ const SessionCard = React.memo(
       return dispatch(patchJob({ id, updates: { notes } }));
     };
 
+    const [canceling, setCanceling] = useState(false);
+
     const [jobOutputDialog, setJobOutputDialog] = useState<Job | undefined>();
-    const onJobOutputClick = (job: Job) => {
+    const onJobOutputClick = (event: React.MouseEvent, job: Job) => {
+      event.stopPropagation();
       setJobOutputDialog(job);
     };
 
@@ -78,24 +90,20 @@ const SessionCard = React.memo(
       setJobOutputDialog(undefined);
     };
 
+    const handleCancelJob = (event: React.MouseEvent) => {
+      event.stopPropagation(); // Prevent triggering of other click events
+      setCanceling(true);
+      dispatch(cancelJob({ id: job.id }));
+    };
+
+    useEffect(() => {
+      if (job.state === 'CANCELLED') {
+        setCanceling(false);
+      }
+    }, [job.state]);
+
     // Scans
     const scans = useAppSelector(scansByJobIdSelector(job.id));
-
-    // Effect to update the scans for a job if an update comes in.
-    useEffect(() => {
-      // If the job or allScans are not yet loaded, do nothing:
-      if (!job || !scans) {
-        return;
-      }
-
-      // For each scanId in the job, check if it exists in the store,
-      // and if not, dispatch the getScan action:
-      job.scanIds.forEach((scanId) => {
-        if (!scans.some((scan) => scan.id === scanId)) {
-          dispatch(getScan({ id: scanId }));
-        }
-      });
-    }, [dispatch, job, scans]);
 
     // Navigation
     const microscopeName = useParams().microscope;
@@ -116,87 +124,122 @@ const SessionCard = React.memo(
 
     const fetchedJobIds = useAppSelector(fetchedJobIdsSelector);
 
+    const isJobRunning =
+      job.state &&
+      ((PendingJobStates.has(job.state) && job.slurm_id) ||
+        RunningJobStates.has(job.state));
+
     return (
-      <HoverCard
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={() => {
-          if (isHoverable) navigate(`${job.id}`);
-        }}
-        isHoverable={isHoverable}
-      >
-        <CardContent style={{ display: 'flex', flexDirection: 'column' }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <Typography variant="h5" component="div">
-              {job.id}
-            </Typography>
-            {job.state && <JobStateComponent state={job.state} />}
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <Typography variant="h6" component="div">
-              {job.submit
-                ? DateTime.fromISO(job.submit).toLocaleString(
-                    DateTime.TIME_SIMPLE
-                  )
-                : ''}
-            </Typography>
-            <EditableField
-              value={job!.notes || ''}
-              onSave={(value) => onSaveNotes(job.id, value)}
-            />
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <IconButton
-              disabled={!job.output}
-              onClick={() => onJobOutputClick(job)}
+      <React.Fragment>
+        <HoverCard
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          onClick={() => {
+            if (isHoverable) navigate(`${job.id}`);
+          }}
+          isHoverable={isHoverable}
+        >
+          <CardContent style={{ display: 'flex', flexDirection: 'column' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
             >
-              <OutputIcon />
-            </IconButton>
-          </div>
-          {fetchedJobIds?.includes(job.id) ? (
-            scans.length > 0 ? (
-              <div>
-                {compactMode ? (
-                  <ImageGallery scans={scans} />
-                ) : (
-                  <ScansPage {...scansPageProps} />
+              <Typography variant="h5" component="div">
+                {job.id}
+              </Typography>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                {isJobRunning &&
+                  (canceling ? (
+                    <CircularProgress size="1.5vh" />
+                  ) : (
+                    <Button
+                      variant="contained"
+                      onClick={handleCancelJob}
+                      color="error"
+                      size="small"
+                    >
+                      Cancel Session
+                    </Button>
+                  ))}
+
+                {job.output && (
+                  <IconButton
+                    disabled={!job.output}
+                    onClick={(event) => onJobOutputClick(event, job)}
+                  >
+                    <OutputIcon />
+                  </IconButton>
                 )}
+                {job.state && <JobStateComponent state={job.state} />}
               </div>
-            ) : (
-              <Card>
-                <CardContent>
-                  <Typography variant={'body1'} component="div" align="center">
-                    No scans for this session...
-                  </Typography>
-                </CardContent>
-              </Card>
-            )
-          ) : null}
-        </CardContent>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <Typography variant="h6" component="div">
+                {job.submit
+                  ? DateTime.fromISO(job.submit).toLocaleString(
+                      DateTime.TIME_SIMPLE
+                    )
+                  : ''}
+              </Typography>
+              <EditableField
+                value={job!.notes || ''}
+                onSave={(value) => onSaveNotes(job.id, value)}
+              />
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            ></div>
+
+            {fetchedJobIds?.includes(job.id) ? (
+              scans.length > 0 ? (
+                <div>
+                  {compactMode ? (
+                    <ImageGallery scans={scans} />
+                  ) : (
+                    <ScansPage {...scansPageProps} />
+                  )}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent>
+                    <Typography
+                      variant={'body1'}
+                      component="div"
+                      align="center"
+                    >
+                      No scans for this session...
+                    </Typography>
+                  </CardContent>
+                </Card>
+              )
+            ) : null}
+          </CardContent>
+        </HoverCard>
         <JobOutputDialog
           open={!!jobOutputDialog}
           onClose={onJobOutputClose}
           job={jobOutputDialog}
         />
-      </HoverCard>
+      </React.Fragment>
     );
   }
 );

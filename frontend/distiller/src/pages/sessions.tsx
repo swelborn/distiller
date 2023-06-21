@@ -23,6 +23,7 @@ import {
   fetchedJobIdsSelector,
   addFetchedJobId,
   setSessionJobId,
+  anyStreamingJobsSelector,
 } from '../features/jobs';
 import { createJob } from '../features/jobs/api';
 import { getJobScans } from '../features/scans';
@@ -61,7 +62,7 @@ const SessionsPage: React.FC = () => {
   );
   const [rowsPerPage, setRowsPerPage] = useUrlState(
     'rowsPerPage',
-    20,
+    10,
     intSerializer,
     intDeserializer
   );
@@ -95,11 +96,12 @@ const SessionsPage: React.FC = () => {
       ? selectJobsByDate(startDateFilter, endDateFilter, jobType)
       : selectJobsByPage(page, rowsPerPage, jobType)
   );
+  const anyStreamingJobs = useAppSelector(anyStreamingJobsSelector);
 
   // Job-related state management
   const [hoveredJobId, setHoveredJobId] = useState<IdType | null>(null);
   const jobsGroupedByDate = groupBy(jobs, (job) =>
-    job.submit ? DateTime.fromISO(job.submit).toISO().split('T')[0] : undefined
+    job.submit ? DateTime.fromISO(job.submit).toISO().split('T')[0] : null
   );
 
   // Machine-related state management
@@ -112,8 +114,6 @@ const SessionsPage: React.FC = () => {
     microscopes.length > 0 ? microscopes[0].id : undefined;
 
   // Streaming and session related state management
-  const [startSessionDisabled, setStartSessionDisabled] =
-    useState<boolean>(false);
   const [jobDialog, setJobDialog] = useState<JobType | undefined>();
 
   // Event Handlers
@@ -128,16 +128,12 @@ const SessionsPage: React.FC = () => {
     setRowsPerPage(jobsPerPage);
     setPage(0);
   };
-  const handleStartSessionClick = () => {
-    setStartSessionDisabled(true);
-  };
   const onStartStreamingClick = () => {
     fetchMachineStates();
     setJobDialog(JobType.Streaming);
   };
   const onJobClose = () => setJobDialog(undefined);
   const onJobSubmit = async (type: JobType, machine: string, params: any) => {
-    handleStartSessionClick();
     const returnedJob: Job = await createJob(type, null, machine, params);
     if (returnedJob) {
       dispatch(setSessionJobId(returnedJob.id));
@@ -216,14 +212,13 @@ const SessionsPage: React.FC = () => {
           <Fab
             color="primary"
             aria-label="start"
-            disabled={startSessionDisabled}
+            disabled={anyStreamingJobs}
             onClick={onStartStreamingClick}
           >
             <Add />
           </Fab>
         </div>
       </Box>
-
       {Object.entries(jobsGroupedByDate)
         .sort(
           ([dateA], [dateB]) =>
@@ -279,6 +274,16 @@ const SessionsPage: React.FC = () => {
             {index < arr.length - 1 && <Divider sx={{ height: '2px' }} />}
           </Box>
         ))}
+      {Object.keys(jobsGroupedByDate).length === 0 && (
+        <ScansToolbar
+          startDate={startDateFilter}
+          endDate={endDateFilter}
+          onStartDate={onStartDate}
+          onEndDate={onEndDate}
+          showFilterBadge={!isNil(startDateFilter) || !isNil(endDateFilter)}
+          showExportButton={false}
+        />
+      )}
       <TablePagination
         rowsPerPageOptions={[10, 20, 100]}
         component="div"

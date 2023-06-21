@@ -13,7 +13,14 @@ import {
   cancelJob as cancelJobAPI,
 } from './api';
 import { getScanJobs as getScanJobsAPI } from '../scans/api';
-import { Job, IdType, JobsRequestResult, JobType } from '../../types';
+import {
+  Job,
+  IdType,
+  JobsRequestResult,
+  JobType,
+  PendingJobStates,
+  RunningJobStates,
+} from '../../types';
 import { DateTime } from 'luxon';
 
 export const jobsAdapter = createEntityAdapter<Job>();
@@ -238,6 +245,36 @@ export const selectJobsByDate = (
     }
   );
 };
+
+export const anyStreamingJobsSelector = createSelector(
+  jobState, // get jobState
+  (state) => {
+    // Current date
+    const now = DateTime.local();
+    // One day ago
+    const oneDayAgo = now.minus({ days: 1 });
+
+    // Return true if any job matches the conditions
+    return Object.values(state.entities).some((job) => {
+      if (job && job.state) {
+        // Check if job type is streaming
+        if (job.job_type === JobType.Streaming) {
+          // Check if job is in pending or running state
+          if (
+            (PendingJobStates.has(job.state) && job.slurm_id) ||
+            RunningJobStates.has(job.state)
+          ) {
+            // Check if job is submitted within the past day
+            if (job.submit && DateTime.fromISO(job.submit) >= oneDayAgo) {
+              return true; // this job matches all the conditions
+            }
+          }
+        }
+      }
+      return false; // this job doesn't match all the conditions
+    });
+  }
+);
 
 export const fetchedJobIdsSelector = (state: RootState) =>
   state.jobs.fetchedJobIds;
