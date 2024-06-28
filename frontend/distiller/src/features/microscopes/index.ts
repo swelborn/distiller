@@ -1,14 +1,14 @@
 import {
-  createAsyncThunk,
-  createSlice,
-  createEntityAdapter,
   PayloadAction,
+  createAsyncThunk,
+  createEntityAdapter,
+  createSlice,
 } from '@reduxjs/toolkit';
 import { RootState } from '../../app/store';
-import { getMicroscopes as getMicroscopesAPI } from './api';
 import { IdType, Microscope } from '../../types';
+import { getMicroscopes as getMicroscopesAPI } from './api';
 
-export const microscopesAdapter = createEntityAdapter<Microscope>({
+export const microscopesAdapter = createEntityAdapter<Microscope, number>({
   selectId: (microscope) => microscope.id,
   sortComparer: (a, b) => a.name.localeCompare(b.name),
 });
@@ -32,7 +32,7 @@ export const getMicroscopes = createAsyncThunk<Microscope[]>(
     return result.map((microscope) => ({
       ...microscope,
     }));
-  }
+  },
 );
 
 export const microscopesSlice = createSlice({

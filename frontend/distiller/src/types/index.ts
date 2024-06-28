@@ -13,6 +13,7 @@ export type ScanLocation = {
 export enum JobType {
   Transfer = 'transfer',
   Count = 'count',
+  Streaming = 'streaming',
 }
 
 export enum JobState {
@@ -76,16 +77,20 @@ export const FailedJobStates = new Set<JobState>([
   JobState.CANCELLED,
 ]);
 
-export type ScanJob = {
+export type Job = {
   id: IdType;
   job_type: JobType;
-  scan_id: IdType;
-  slurm_id: IdType;
-  elapsed: number;
-  state: JobState;
+  scan_ids: IdType[];
+  slurm_id: IdType | null;
+  elapsed: number | null;
+  state: JobState | null;
   params: any;
-  output?: string;
+  output?: string | null;
   machine?: string;
+  submit?: string | null;
+  notes?: string;
+  prevJobId?: IdType;
+  nextJobId?: IdType;
 };
 
 export type Metadata = { [name: string]: any };
@@ -98,7 +103,7 @@ export type Scan = {
   locations: ScanLocation[];
   notes?: string;
   image_path?: string;
-  jobs: ScanJob[];
+  job_ids: IdType[];
   prevScanId?: IdType;
   nextScanId?: IdType;
   metadata?: Metadata;
@@ -111,6 +116,12 @@ export type ScansRequestResult = {
   totalCount: number;
 };
 
+export type JobsRequestResult = {
+  jobs: Job[];
+  // The unfiltered number of jobs
+  totalCount: number;
+};
+
 export type Machine = {
   name: string;
   status: string;
@@ -118,9 +129,15 @@ export type Machine = {
   statusURL: string;
 };
 
+export type DarkfieldCorrection = {
+  label: string;
+  value: string;
+};
+
 export enum ExportFormat {
   JSON = 'json',
   CSV = 'csv',
+  HTML = 'html',
 }
 
 export type Microscope = {

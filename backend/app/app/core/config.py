@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     IMAGE_UPLOAD_DIR: str
     IMAGE_URL_PREFIX: str
     IMAGE_STATIC_DIR: str
+    IMAGE_FORMAT: str = "jpeg"
     # Max age a scan can be to still have a HAADF image associated with it (hours)
     # This is need to avoid associate a HAADF with a old scan if the scan ids
     # have been reset in in the detector software.
@@ -71,7 +72,7 @@ class Settings(BaseSettings):
 
     MACHINES: List[Machine]
     NCEMHUB_PATH: str
-    NOTEBOOKS: List[str] = ["DPC"]
+    NOTEBOOKS: List[str] = ["DPC", "vacuum_scan_prepare", "vacuum_scan_subtract"]
 
     class Config:
         case_sensitive = True

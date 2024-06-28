@@ -1,28 +1,25 @@
 import React, { useState } from 'react';
 
+import ClearIcon from '@mui/icons-material/Clear';
+import DownloadIcon from '@mui/icons-material/Download';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import {
-  Toolbar,
-  Popover,
-  TextField,
+  Badge,
   Box,
-  Grid,
   Button,
+  Grid,
   Menu,
   MenuItem,
-  Badge,
+  Popover,
+  Toolbar,
 } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
-import ClearIcon from '@mui/icons-material/Clear';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import DownloadIcon from '@mui/icons-material/Download';
-
 import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { DateTime } from 'luxon';
-
-import { ExportFormat } from '../types';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { isNull } from 'lodash';
+import { DateTime } from 'luxon';
+import { ExportFormat } from '../types';
 
 type FilterPopoverProps = {
   anchorEl: HTMLElement | null;
@@ -79,19 +76,17 @@ const FilterPopover: React.FC<FilterPopoverProps> = (props) => {
               <Grid item xs={6}>
                 <DatePicker
                   label="Start Date"
-                  inputFormat="MM/dd/yy"
+                  format="MM/dd/yy"
                   value={startDate}
                   onChange={onStartDateChange}
-                  renderInput={(params) => <TextField {...params} />}
                 />
               </Grid>
               <Grid item xs={6}>
                 <DatePicker
                   label="End Date"
-                  inputFormat="MM/dd/yy"
+                  format="MM/dd/yy"
                   value={endDate}
                   onChange={onEndDateChange}
-                  renderInput={(params) => <TextField {...params} />}
                 />
               </Grid>
             </Grid>
@@ -134,6 +129,11 @@ const ExportMenu: React.FC<ExportMenuProps> = (props) => {
     onClose();
   };
 
+  const exportAsHTML = () => {
+    onExport(ExportFormat.HTML);
+    onClose();
+  };
+
   return (
     <Menu
       id="basic-menu"
@@ -154,6 +154,7 @@ const ExportMenu: React.FC<ExportMenuProps> = (props) => {
     >
       <MenuItem onClick={exportAsJSON}>Download scans as JSON</MenuItem>
       <MenuItem onClick={exportAsCSV}>Download scans as CSV</MenuItem>
+      <MenuItem onClick={exportAsHTML}>Download scans as HTML</MenuItem>
     </Menu>
   );
 };
@@ -161,18 +162,18 @@ const ExportMenu: React.FC<ExportMenuProps> = (props) => {
 type ScansToolbarProps = {
   startDate: DateTime | null;
   endDate: DateTime | null;
-  onStartDate: (date: DateTime | null) => void;
-  onEndDate: (date: DateTime | null) => void;
-  onExport: (format: ExportFormat) => void;
+  onStartDate?: (date: DateTime | null) => void;
+  onEndDate?: (date: DateTime | null) => void;
+  onExport?: (format: ExportFormat) => void;
   showFilterBadge: boolean;
 };
 
 export const ScansToolbar: React.FC<ScansToolbarProps> = (props) => {
   const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLElement | null>(
-    null
+    null,
   );
   const [exportAnchorEl, setExportAnchorEl] = useState<HTMLElement | null>(
-    null
+    null,
   );
   const {
     startDate,
@@ -199,6 +200,8 @@ export const ScansToolbar: React.FC<ScansToolbarProps> = (props) => {
     setExportAnchorEl(null);
   };
 
+  const showFilter = onStartDate !== undefined && onEndDate !== undefined;
+
   return (
     <Toolbar
       sx={{
@@ -208,48 +211,60 @@ export const ScansToolbar: React.FC<ScansToolbarProps> = (props) => {
         justifyContent: 'flex-end',
       }}
     >
-      <Box pr={1}>
-        <Tooltip title="Export Scans">
-          <Button
-            onClick={onExportClick}
-            size="small"
-            color="primary"
-            startIcon={<DownloadIcon />}
-          >
-            Export
-          </Button>
-        </Tooltip>
-      </Box>
-      <Box>
-        <Tooltip title="Filter Scans">
-          <Button
-            onClick={onFilterClick}
-            size="small"
-            color="primary"
-            startIcon={
-              <Badge color="primary" variant="dot" invisible={!showFilterBadge}>
-                <FilterListIcon />
-              </Badge>
-            }
-          >
-            Filter
-          </Button>
-        </Tooltip>
-      </Box>
+      {onExport && (
+        <Box pr={1}>
+          <Tooltip title="Export Scans">
+            <Button
+              onClick={onExportClick}
+              size="small"
+              color="primary"
+              startIcon={<DownloadIcon />}
+            >
+              Export
+            </Button>
+          </Tooltip>
+        </Box>
+      )}
+      {showFilter && (
+        <Box>
+          <Tooltip title="Filter Scans">
+            <Button
+              onClick={onFilterClick}
+              size="small"
+              color="primary"
+              startIcon={
+                <Badge
+                  color="primary"
+                  variant="dot"
+                  invisible={!showFilterBadge}
+                >
+                  <FilterListIcon />
+                </Badge>
+              }
+            >
+              Filter
+            </Button>
+          </Tooltip>
+        </Box>
+      )}
 
-      <FilterPopover
-        anchorEl={filterAnchorEl}
-        onClose={onFilterClose}
-        startDate={startDate}
-        endDate={endDate}
-        onStartDate={onStartDate}
-        onEndDate={onEndDate}
-      />
-      <ExportMenu
-        anchorEl={exportAnchorEl}
-        onClose={onExportClose}
-        onExport={onExport}
-      />
+      {showFilter && (
+        <FilterPopover
+          anchorEl={filterAnchorEl}
+          onClose={onFilterClose}
+          startDate={startDate}
+          endDate={endDate}
+          onStartDate={onStartDate}
+          onEndDate={onEndDate}
+        />
+      )}
+      {onExport && (
+        <ExportMenu
+          anchorEl={exportAnchorEl}
+          onClose={onExportClose}
+          onExport={onExport}
+        />
+      )}
     </Toolbar>
   );
 };

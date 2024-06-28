@@ -1,89 +1,77 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams as useUrlParams } from 'react-router-dom';
 
-import { useParams as useUrlParams, useNavigate } from 'react-router-dom';
-
-import useLocalStorageState from 'use-local-storage-state';
-
-import {
-  Card,
-  Grid,
-  Table,
-  TableRow,
-  TableBody,
-  TableCell,
-  LinearProgress,
-  CardContent,
-  TableHead,
-  CardHeader,
-  CardActions,
-  Button,
-  IconButton,
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
-import CompleteIcon from '@mui/icons-material/CheckCircle';
-import ImageIcon from '@mui/icons-material/Image';
-import TransferIcon from '@mui/icons-material/CompareArrows';
-import CountIcon from '@mui/icons-material/BlurOn';
-import OutputIcon from '@mui/icons-material/Terminal';
 import LeftIcon from '@mui/icons-material/ArrowLeft';
 import RightIcon from '@mui/icons-material/ArrowRight';
+import CountIcon from '@mui/icons-material/BlurOn';
+import CompleteIcon from '@mui/icons-material/CheckCircle';
+import TransferIcon from '@mui/icons-material/CompareArrows';
+import OutputIcon from '@mui/icons-material/Terminal';
 import TextSnippetOutlined from '@mui/icons-material/TextSnippetOutlined';
-import { pink } from '@mui/material/colors';
+import {
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardHeader,
+  Grid,
+  IconButton,
+  LinearProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
+import Breadcrumbs from '@mui/material/Breadcrumbs';
+import Link from '@mui/material/Link';
+import { styled } from '@mui/material/styles';
+import { Box } from '@mui/system';
 import humanizeDuration from 'humanize-duration';
 import { DateTime } from 'luxon';
-
+import useLocalStorageState from 'use-local-storage-state';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { staticURL } from '../client';
-import { getScan, scansSelector, patchScan } from '../features/scans';
-import { getNotebooks, selectNotebooks } from '../features/notebooks';
-import {
-  machineState,
-  machineSelectors,
-  getMachineState,
-} from '../features/machines';
-import LocationComponent from '../components/location';
-import EditableField from '../components/editable-field';
-import { IdType, JobType, Scan, ScanJob, Microscope } from '../types';
-import JobStateComponent from '../components/job-state';
-import TransferDialog from '../components/transfer-dialog';
 import CountDialog from '../components/count-dialog';
-import { createJob } from '../features/jobs/api';
-import { fetchOrCreateNotebook } from '../features/notebooks/api';
-import { RemoveScanFilesConfirmDialog } from '../components/scan-confirm-dialog';
+import EditableField from '../components/editable-field';
+import ImageDialog from '../components/image-dialog';
 import JobOutputDialog from '../components/job-output';
-import { isNil } from '../utils';
-import { SCANS } from '../routes';
-import { canRunJobs } from '../utils/machine';
+import JobStateComponent from '../components/job-state';
+import LocationComponent from '../components/location';
 import MetadataComponent from '../components/metadata';
+import { NoThumbnailImageIcon } from '../components/no-thumbnail-image-icon';
+import { RemoveScanFilesConfirmDialog } from '../components/scan-confirm-dialog';
+import { ThumbnailImage } from '../components/thumbnail-image';
+import TransferDialog from '../components/transfer-dialog';
+import { JUPYTER_USER_REDIRECT_URL } from '../constants';
+import { getScanJobs, jobsByScanIdAndTypes } from '../features/jobs';
+import { createJob } from '../features/jobs/api';
+import {
+  getMachineState,
+  machineSelectors,
+  machineState,
+} from '../features/machines';
 import {
   microscopesSelectors,
   microscopesState,
 } from '../features/microscopes';
+import { getNotebooks, selectNotebooks } from '../features/notebooks';
+import { fetchOrCreateNotebook } from '../features/notebooks/api';
+import { getScan, patchScan, scansSelector } from '../features/scans';
+import { SCANS, SESSIONS } from '../routes';
+import { IdType, Job, JobType, Microscope, Scan } from '../types';
+import { isNil, stopPropagation } from '../utils';
+import { canRunJobs } from '../utils/machine';
 import { canonicalMicroscopeName } from '../utils/microscopes';
-import ImageDialog from '../components/image-dialog';
-import { stopPropagation } from '../utils';
-import { JUPYTER_USER_REDIRECT_URL } from '../constants';
-import CircularProgress from '@mui/material/CircularProgress';
-import { Box } from '@mui/system';
+import { ProtectedImage } from '../components/protected-image';
 
 const TableHeaderCell = styled(TableCell)(({ theme }) => ({
   fontWeight: 600,
-}));
-
-const ThumbnailImage = styled('img')(({ theme }) => ({
-  width: '100%',
-  height: '100%',
-  objectFit: 'cover',
-  cursor: 'pointer',
-}));
-
-const NoThumbnailImageIcon = styled(ImageIcon)(({ theme }) => ({
-  width: '60%',
-  height: '60%',
-  objectFit: 'cover',
-  color: pink.A400,
-  cursor: 'pointer',
 }));
 
 const TableStateCell = styled(TableCell)(({ theme }) => ({
@@ -93,13 +81,12 @@ const TableStateCell = styled(TableCell)(({ theme }) => ({
 const StateContent = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'end',
+  justifyContent: 'center',
 }));
 
 const Spacer = styled('div')(({ theme }) => ({
   flexGrow: 1,
 }));
-
-type Props = {};
 
 function jobTypeToIcon(type: JobType) {
   if (type === JobType.Count) {
@@ -111,26 +98,40 @@ function jobTypeToIcon(type: JobType) {
   }
 }
 
-const ScanPage: React.FC<Props> = () => {
+type ScanPageProps = {
+  mutable?: boolean;
+};
+
+const ScanPage: React.FC<ScanPageProps> = (props) => {
+  const { mutable = true } = props;
   const [maximizeImg, setMaximizeImg] = useState(false);
   const [notebookLoading, setNotebookLoading] = React.useState(false);
+  const [notebookMenuAnchorEl, setNotebookMenuAnchorEl] =
+    React.useState<null | HTMLElement>(null);
+  const showNotebookMenu = Boolean(notebookMenuAnchorEl);
   const scanIdParam = useUrlParams().scanId;
 
   const scanId = parseInt(scanIdParam as string);
+  const scan = useAppSelector((state) =>
+    scansSelector.selectById(state, scanId),
+  );
+  const jobs = useAppSelector(
+    jobsByScanIdAndTypes(scanId, [JobType.Count, JobType.Transfer]),
+  );
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const [jobDialog, setJobDialog] = useState<JobType | undefined>();
-  const [jobOutputDialog, setJobOutputDialog] = useState<ScanJob | undefined>();
+  const [jobOutputDialog, setJobOutputDialog] = useState<Job | undefined>();
   const [scanFilesToRemove, setScanFilesToRemove] = React.useState<Scan | null>(
-    null
+    null,
   );
   const [onScanFilesRemovalConfirm, setOnScanFilesRemovalConfirm] =
     React.useState<(params: { [key: string]: any } | undefined) => void>();
 
   const machines = useAppSelector((state) =>
-    machineSelectors.selectAll(machineState(state))
+    machineSelectors.selectAll(machineState(state)),
   );
   const machineNames = machines.map((machine) => machine.name);
   const [machine, setMachine] = useLocalStorageState<string>('machine', {
@@ -138,7 +139,7 @@ const ScanPage: React.FC<Props> = () => {
   });
 
   const microscopes = useAppSelector((state) =>
-    microscopesSelectors.selectAll(microscopesState(state))
+    microscopesSelectors.selectAll(microscopesState(state)),
   );
 
   const microscopesByCanonicalName = microscopes.reduce(
@@ -147,7 +148,7 @@ const ScanPage: React.FC<Props> = () => {
 
       return obj;
     },
-    {}
+    {},
   );
 
   let microscope: Microscope | null = null;
@@ -162,6 +163,13 @@ const ScanPage: React.FC<Props> = () => {
 
   useEffect(() => {
     dispatch(getScan({ id: scanId }));
+  }, [dispatch, scanId]);
+
+  // This effect handles fetching jobs related to the scan
+  useEffect(() => {
+    if (scanId) {
+      dispatch(getScanJobs({ scanId: scanId }));
+    }
   }, [dispatch, scanId]);
 
   useEffect(() => {
@@ -196,7 +204,7 @@ const ScanPage: React.FC<Props> = () => {
     return createJob(type, scanId, machine, params);
   };
 
-  const onJobOutputClick = (job: ScanJob) => {
+  const onJobOutputClick = (job: Job) => {
     setJobOutputDialog(job);
   };
 
@@ -229,10 +237,6 @@ const ScanPage: React.FC<Props> = () => {
     });
   };
 
-  const scan = useAppSelector((state) =>
-    scansSelector.selectById(state, scanId)
-  );
-
   const notebooks = useAppSelector((state) => selectNotebooks(state));
 
   const onNavigateNext = () => {
@@ -253,6 +257,19 @@ const ScanPage: React.FC<Props> = () => {
     navigate(`/${microscopeName}/${SCANS}/${scan?.prevScanId}`);
   };
 
+  const jobId = useUrlParams().jobId;
+  const onNavigateBack = () => {
+    if (microscope === null) {
+      return;
+    }
+    const microscopeName = canonicalMicroscopeName(microscope.name);
+    if (jobId) {
+      navigate(`/${microscopeName}/${SESSIONS}/${jobId}`);
+    } else {
+      navigate(`/${microscopeName}/${SCANS}`);
+    }
+  };
+
   if (scan === undefined || microscope === null) {
     return null;
   }
@@ -269,6 +286,7 @@ const ScanPage: React.FC<Props> = () => {
 
   const onLaunchNotebook = (name: string) => {
     setNotebookLoading(true);
+    setNotebookMenuAnchorEl(null);
     fetchOrCreateNotebook(name, scan.id)
       .then((notebook) => {
         window.open(`${JUPYTER_USER_REDIRECT_URL}${notebook.path}`, '_blank');
@@ -280,14 +298,65 @@ const ScanPage: React.FC<Props> = () => {
       .finally(() => setNotebookLoading(false));
   };
 
+  let microscopePrefix = '';
+  if (microscope != null) {
+    const canonicalName = canonicalMicroscopeName(microscope.name);
+    microscopePrefix = `/${canonicalName}`;
+  }
+
+  // Special case for file: protocol (i.e. the static site mode), we need to add
+  // the the origin and hash to make the links as with the file protocol
+  // the origin is 'null',
+  if (window.location.protocol === 'file:') {
+    origin = `${window.location.origin}/${window.location.pathname}#`;
+  }
+
   return (
     <React.Fragment>
+      <Breadcrumbs sx={{ mb: 2 }}>
+        {jobId && (
+          // Link to sessions
+          <Link
+            underline="hover"
+            color="inherit"
+            href={`${origin}${microscopePrefix}/sessions/`}
+          >
+            Sessions
+          </Link>
+        )}
+        {jobId && (
+          // Link to session
+          <Link
+            underline="hover"
+            color="inherit"
+            href={`${origin}${microscopePrefix}/sessions/`}
+          >
+            {jobId}
+          </Link>
+        )}
+        {/* Link to scans  */}
+        <Link
+          underline="hover"
+          color="inherit"
+          href={
+            jobId
+              ? `${origin}${microscopePrefix}/sessions/${jobId}`
+              : `${origin}${microscopePrefix}/scans`
+          }
+        >
+          Scans
+        </Link>
+
+        {/* The scan */}
+        <Typography color="text.primary">{scanId}</Typography>
+      </Breadcrumbs>
       <Card sx={{ marginBottom: '2rem' }}>
         <CardContent>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={4} md={3}>
               {scan.image_path ? (
-                <ThumbnailImage
+                <ProtectedImage
+                  component={ThumbnailImage}
                   src={`${staticURL}${scan.image_path}`}
                   alt="scan thumbnail"
                   onClick={stopPropagation(() => onImgClick(scan))}
@@ -317,6 +386,7 @@ const ScanPage: React.FC<Props> = () => {
                         scan={scan}
                         locations={scan.locations}
                         machines={machineNames}
+                        allowDeletion={mutable}
                       />
                     </TableCell>
                   </TableRow>
@@ -326,7 +396,7 @@ const ScanPage: React.FC<Props> = () => {
                       <Tooltip title={scan.created} followCursor>
                         <div>
                           {DateTime.fromISO(scan.created).toLocaleString(
-                            DateTime.DATETIME_FULL
+                            DateTime.DATETIME_FULL,
                           )}
                         </div>
                       </Tooltip>
@@ -359,88 +429,114 @@ const ScanPage: React.FC<Props> = () => {
                 <TableCell align="right">
                   <EditableField
                     value={scan.notes || ''}
-                    onSave={(value) => onSaveNotes(scan.id, value)}
+                    onSave={
+                      mutable
+                        ? (value) => onSaveNotes(scan.id, value)
+                        : undefined
+                    }
                   />
                 </TableCell>
               </TableRow>
             </TableBody>
           </Table>
         </CardContent>
-        <CardActions>
-          {actions.indexOf('transfer') !== -1 && (
+        {actions.length !== 0 && (
+          <CardActions>
+            {actions.indexOf('transfer') !== -1 && (
+              <Button
+                onClick={onTransferClick}
+                size="small"
+                color="primary"
+                variant="outlined"
+                startIcon={<TransferIcon />}
+              >
+                Transfer
+              </Button>
+            )}
+            {actions.indexOf('count') !== -1 && (
+              <Button
+                onClick={onCountClick}
+                size="small"
+                color="primary"
+                variant="outlined"
+                startIcon={<CountIcon />}
+              >
+                Count
+              </Button>
+            )}
+            {notebooks && (
+              <Box sx={{ m: 1, position: 'relative' }}>
+                <Button
+                  onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                    setNotebookMenuAnchorEl(event.currentTarget);
+                  }}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  startIcon={<TextSnippetOutlined />}
+                >
+                  Launch notebook
+                </Button>
+                {notebookLoading && (
+                  <CircularProgress
+                    size={24}
+                    sx={{
+                      color: 'primary',
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      marginTop: '-12px',
+                      marginLeft: '-12px',
+                    }}
+                  />
+                )}
+                <Menu
+                  anchorEl={notebookMenuAnchorEl}
+                  open={showNotebookMenu}
+                  onClose={() => {
+                    setNotebookMenuAnchorEl(null);
+                  }}
+                  MenuListProps={{
+                    'aria-labelledby': 'basic-button',
+                  }}
+                >
+                  {notebooks.map((name: string) => {
+                    return (
+                      <MenuItem
+                        onClick={() => {
+                          onLaunchNotebook(name);
+                        }}
+                      >
+                        {name.toUpperCase()}
+                      </MenuItem>
+                    );
+                  })}
+                </Menu>
+              </Box>
+            )}
+            <Spacer />
             <Button
-              onClick={onTransferClick}
+              onClick={onNavigatePrev}
               size="small"
               color="primary"
               variant="outlined"
-              startIcon={<TransferIcon />}
+              startIcon={<LeftIcon />}
+              disabled={isNil(scan.prevScanId)}
             >
-              Transfer
+              Prev Scan
             </Button>
-          )}
-          {actions.indexOf('count') !== -1 && (
             <Button
-              onClick={onCountClick}
+              onClick={onNavigateNext}
               size="small"
               color="primary"
               variant="outlined"
-              startIcon={<CountIcon />}
+              endIcon={<RightIcon />}
+              disabled={isNil(scan.nextScanId)}
             >
-              Count
+              Next Scan
             </Button>
-          )}
-          {notebooks &&
-            notebooks.map((name: string) => {
-              return (
-                <Box sx={{ m: 1, position: 'relative' }}>
-                  <Button
-                    key={name}
-                    onClick={() => onLaunchNotebook(name)}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                    startIcon={<TextSnippetOutlined />}
-                  >
-                    Launch {name} notebook
-                  </Button>
-                  {notebookLoading && (
-                    <CircularProgress
-                      size={24}
-                      sx={{
-                        color: 'primary',
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        marginTop: '-12px',
-                        marginLeft: '-12px',
-                      }}
-                    />
-                  )}
-                </Box>
-              );
-            })}
-          <Spacer />
-          <Button
-            onClick={onNavigatePrev}
-            size="small"
-            color="primary"
-            variant="outlined"
-            startIcon={<LeftIcon />}
-            disabled={isNil(scan.prevScanId)}
-          >
-            Prev Scan
-          </Button>
-          <Button
-            onClick={onNavigateNext}
-            size="small"
-            color="primary"
-            variant="outlined"
-            endIcon={<RightIcon />}
-            disabled={isNil(scan.nextScanId)}
-          >
-            Next Scan
-          </Button>
-        </CardActions>
+          </CardActions>
+        )}
       </Card>
       {actions.length !== 0 && (
         <Card>
@@ -458,7 +554,7 @@ const ScanPage: React.FC<Props> = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {[...scan.jobs]
+                {[...jobs]
                   .sort((a, b) => b.id - a.id)
                   .map((job) => {
                     const Icon = jobTypeToIcon(job.job_type);
@@ -471,7 +567,9 @@ const ScanPage: React.FC<Props> = () => {
                         </TableCell>
                         <TableCell>{job.slurm_id}</TableCell>
                         <TableCell>
-                          {humanizeDuration(job.elapsed * 1000)}
+                          {humanizeDuration(
+                            job.elapsed ? job.elapsed * 1000 : 0,
+                          )}
                         </TableCell>
                         <TableStateCell align="right">
                           <StateContent>
@@ -481,7 +579,9 @@ const ScanPage: React.FC<Props> = () => {
                             >
                               <OutputIcon />
                             </IconButton>
-                            <JobStateComponent state={job.state} />
+                            {job.state && (
+                              <JobStateComponent state={job.state} />
+                            )}
                           </StateContent>
                         </TableStateCell>
                       </TableRow>

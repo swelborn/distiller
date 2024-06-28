@@ -1,20 +1,22 @@
 import {
-  createAsyncThunk,
-  createSlice,
-  createEntityAdapter,
   PayloadAction,
+  createAsyncThunk,
+  createEntityAdapter,
   createSelector,
+  createSlice,
 } from '@reduxjs/toolkit';
-import { RootState } from '../../app/store';
-import {
-  getScans as getScansAPI,
-  getScan as getScanAPI,
-  patchScan as patchScanAPI,
-  removeScanFiles as removeScanFilesAPI,
-  removeScan as removeScanAPI,
-} from './api';
-import { Scan, IdType, ScansRequestResult } from '../../types';
 import { DateTime } from 'luxon';
+import { RootState } from '../../app/store';
+import { IdType, Scan, ScansRequestResult } from '../../types';
+import { jobSelector } from '../jobs';
+import { getJobScans as getJobScansAPI } from '../jobs/api';
+import {
+  getScan as getScanAPI,
+  getScans as getScansAPI,
+  patchScan as patchScanAPI,
+  removeScan as removeScanAPI,
+  removeScanFiles as removeScanFilesAPI,
+} from './api';
 
 export const scansAdapter = createEntityAdapter<Scan>();
 
@@ -52,8 +54,42 @@ export const getScan = createAsyncThunk<Scan, { id: IdType }>(
     const scan = await getScanAPI(id);
 
     return scan;
-  }
+  },
 );
+
+export const getJobScans = createAsyncThunk<
+  { scans: Scan[] | null },
+  {
+    jobId: IdType;
+  },
+  { state: RootState }
+>('scans/fetchByJobId', async (payload, thunkAPI) => {
+  const { jobId } = payload;
+  const state = thunkAPI.getState();
+
+  // Optimization, only fetch scans if we haven't already
+  let doFetch = true;
+
+  // First, check if the requested job exists in the store
+  // If the job is not in the store, the getJob request hasn't resolved yet.
+  // So just fetch the scans regardless since it's likely we haven't fetched the
+  // relevant scans anyway.
+  const job = jobSelector(jobId)(state);
+
+  if (job) {
+    const scanIds = job.scan_ids;
+    const scansInState = scanIds.map((id) => scanSelector(id)(state));
+    doFetch = scansInState.some((scan) => scan === undefined);
+  }
+
+  if (doFetch) {
+    // Make the API call
+    const scans = await getJobScansAPI(jobId);
+    return { scans };
+  } else {
+    return { scans: null };
+  }
+});
 
 export const patchScan = createAsyncThunk<
   Scan,
@@ -87,11 +123,11 @@ export const scansSlice = createSlice({
   name: 'scans',
   initialState,
   reducers: {
-    setScan(state, action: PayloadAction<Scan>) {
+    createScanFromNotification(state, action: PayloadAction<Scan>) {
       state.totalCount = state.totalCount + 1;
       scansAdapter.setOne(state, action.payload);
     },
-    updateScan(state, action: PayloadAction<Partial<Scan>>) {
+    updateScanFromNotification(state, action: PayloadAction<Partial<Scan>>) {
       // const currentScan = scansSelector.selectById
       const { id, ...changes } = action.payload;
       if (id !== undefined) {
@@ -119,6 +155,12 @@ export const scansSlice = createSlice({
       .addCase(getScan.fulfilled, (state, action) => {
         scansAdapter.setOne(state, action.payload);
       })
+      .addCase(getJobScans.fulfilled, (state, action) => {
+        const scans = action.payload.scans;
+        if (scans) {
+          scansAdapter.upsertMany(state, scans);
+        }
+      })
       .addCase(patchScan.fulfilled, (state, action) => {
         const update = {
           id: action.payload.id,
@@ -133,17 +175,63 @@ export const scansSlice = createSlice({
 });
 
 export const scansSelector = scansAdapter.getSelectors<RootState>(
-  (state) => state.scans
+  (state) => state.scans,
 );
 
-const scanState = (rootState: RootState) => rootState.scans;
-const { selectById } = scansAdapter.getSelectors();
+const scansState = (rootState: RootState) => rootState.scans;
+
+const { selectById, selectAll } = scansAdapter.getSelectors();
+
 export const scanSelector = (id: IdType) => {
-  return createSelector(scanState, (state) => selectById(state, id));
+  return createSelector(scansState, (state) => selectById(state, id));
+};
+
+export const allScansSelector = createSelector(scansState, (scansState) =>
+  selectAll(scansState),
+);
+
+const filterScanByJobId = (jobId: IdType) => (scan: Scan) =>
+  scan.job_ids && scan.job_ids.includes(jobId);
+
+const filterScanByDate =
+  (startDateFilter: DateTime | null, endDateFilter: DateTime | null) =>
+  (scan: Scan) => {
+    if (
+      startDateFilter &&
+      scan.created &&
+      DateTime.fromISO(scan.created) < startDateFilter
+    ) {
+      return false;
+    }
+    if (
+      endDateFilter &&
+      scan.created &&
+      DateTime.fromISO(scan.created) > endDateFilter
+    ) {
+      return false;
+    }
+    return true;
+  };
+
+export const scansByJobIdSelector = (jobId: IdType) => {
+  return createSelector(allScansSelector, (scans) => {
+    return scans.filter(filterScanByJobId(jobId));
+  });
+};
+
+export const scansByDateSelector = (
+  startDateFilter: DateTime | null,
+  endDateFilter: DateTime | null,
+) => {
+  return createSelector([allScansSelector], (scans) => {
+    scans = scans.filter(filterScanByDate(startDateFilter, endDateFilter));
+    return scans;
+  });
 };
 
 export const totalCount = (state: RootState) => state.scans.totalCount;
 
-export const { setScan, updateScan } = scansSlice.actions;
+export const { createScanFromNotification, updateScanFromNotification } =
+  scansSlice.actions;
 
 export default scansSlice.reducer;

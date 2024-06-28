@@ -4,22 +4,22 @@ import {
   createSlice,
   ThunkDispatch,
 } from '@reduxjs/toolkit';
+import { isNil } from 'lodash';
+import { matchPath, Path } from 'react-router';
 import { RootState } from '../../app/store';
-import {
-  authenticate as authenticateAPI,
-  refreshToken as refreshTokenAPI,
-  getUser as getUserAPI,
-  deleteRefreshToken as deleteRefreshTokenAPI,
-} from './api';
-import { User } from '../../types';
 import { apiClient } from '../../client';
-import { connectNotifications } from '../notifications';
+import { Microscope, User } from '../../types';
+import { canonicalMicroscopeName } from '../../utils/microscopes';
 import { getMachines } from '../machines';
 import { getMicroscopes } from '../microscopes';
-import { canonicalMicroscopeName } from '../../utils/microscopes';
-import { Microscope } from '../../types';
-import { matchPath, Path } from 'react-router';
-import { isNil } from 'lodash';
+import { connectNotifications } from '../notifications';
+import {
+  authenticate as authenticateAPI,
+  deleteRefreshToken as deleteRefreshTokenAPI,
+  getUser as getUserAPI,
+  refreshToken as refreshTokenAPI,
+} from './api';
+import { isStatic } from '../../utils';
 
 export interface AuthState {
   user?: User;
@@ -41,7 +41,7 @@ const getMicroscopeID = (microscopes: Microscope[], pathName: string) => {
 
       return obj;
     },
-    {}
+    {},
   );
 
   const pathMatch = matchPath({ path: '/:microscopeName/*' }, pathName);
@@ -82,9 +82,12 @@ export const login = createAsyncThunk<User, AuthenticatePayload>(
     const controller = new AbortController();
     refreshController = controller;
 
-    setTimeout(() => {
-      refreshToken(true, thunkAPI.dispatch, controller.signal);
-    }, (exp - 30) * 1000); // Refresh 30 seconds before actual expiration
+    setTimeout(
+      () => {
+        refreshToken(true, thunkAPI.dispatch, controller.signal);
+      },
+      (exp - 30) * 1000,
+    ); // Refresh 30 seconds before actual expiration
 
     const microscopes = await dispatch(getMicroscopes()).unwrap();
     const microscopeID = getMicroscopeID(microscopes, from.pathname);
@@ -94,13 +97,13 @@ export const login = createAsyncThunk<User, AuthenticatePayload>(
     const user = await getUserAPI();
 
     return user;
-  }
+  },
 );
 
 async function refreshToken(
   autoRefresh: boolean,
   dispatch: ThunkDispatch<unknown, unknown, AnyAction>,
-  signal: AbortSignal
+  signal: AbortSignal,
 ) {
   try {
     const auth = await refreshTokenAPI();
@@ -109,11 +112,14 @@ async function refreshToken(
     apiClient.setToken(access_token);
 
     if (autoRefresh) {
-      setTimeout(() => {
-        if (!signal.aborted) {
-          refreshToken(autoRefresh, dispatch, signal);
-        }
-      }, (exp - 30) * 1000); // Refresh 30 seconds before actual expiration
+      setTimeout(
+        () => {
+          if (!signal.aborted) {
+            refreshToken(autoRefresh, dispatch, signal);
+          }
+        },
+        (exp - 30) * 1000,
+      ); // Refresh 30 seconds before actual expiration
     }
   } catch (e) {
     dispatch(logout());
@@ -132,14 +138,20 @@ export const restoreSession = createAsyncThunk<User, void>(
 
     await refreshToken(true, thunkAPI.dispatch, controller.signal);
     const microscopes = await dispatch(getMicroscopes()).unwrap();
-    const microscopeID = getMicroscopeID(microscopes, window.location.pathname);
-    dispatch(connectNotifications({ microscopeID }));
+    // Only connect notifications if not in static mode
+    if (!isStatic()) {
+      const microscopeID = getMicroscopeID(
+        microscopes,
+        window.location.pathname,
+      );
+      dispatch(connectNotifications({ microscopeID }));
+    }
     dispatch(getMachines());
 
     const user = await getUserAPI();
 
     return user;
-  }
+  },
 );
 
 export const logout = createAsyncThunk<void, void>(
@@ -148,7 +160,7 @@ export const logout = createAsyncThunk<void, void>(
     refreshController.abort();
     await deleteRefreshTokenAPI();
     apiClient.setToken(undefined);
-  }
+  },
 );
 
 export const authSlice = createSlice({

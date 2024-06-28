@@ -1,5 +1,6 @@
 export interface IRequestOptions {
-  url: string;
+  path?: string;
+  url?: string;
   method?: string;
   headers?: { [key: string]: string };
   params?: { [key: string]: any };
@@ -10,7 +11,7 @@ export interface IRequestOptions {
 }
 
 export interface IWebsocketOptions {
-  url: string;
+  path: string;
   params: { [key: string]: any };
 }
 
@@ -70,15 +71,15 @@ export class ApiClient implements IApiClient {
   ws(options: IWebsocketOptions) {
     return new Promise<WebSocket>((resolve, reject) => {
       try {
-        const { url } = options;
+        const { path } = options;
         const baseUrl = this.getBaseURL().replace('http', 'ws');
         const params: any = { ...options.params };
         const token = this.getToken();
         if (token !== undefined) {
           params['token'] = token;
         }
-        const fullURL = `${baseUrl}/${url}?${new URLSearchParams(
-          params
+        const fullURL = `${baseUrl}/${path}?${new URLSearchParams(
+          params,
         ).toString()}`;
         const ws = new WebSocket(fullURL);
         ws.onopen = (_ev) => resolve(ws);
@@ -94,8 +95,13 @@ export class ApiClient implements IApiClient {
   }
 
   protected rawRequest(options: IRequestOptions) {
-    let { url, method, headers, params, json, form, extra, abortSignal } =
+    let { url, path, method, headers, params, json, form, extra, abortSignal } =
       options;
+
+    if (url === undefined && path === undefined) {
+      throw new Error("Either 'url' or 'path' option must be provided");
+    }
+
     if (method === undefined) method = 'GET';
     if (headers === undefined) headers = {};
     if (params === undefined) params = {};
@@ -126,9 +132,9 @@ export class ApiClient implements IApiClient {
       body = form;
     }
 
-    const fullURL = `${baseURL}/${url}?${new URLSearchParams(
-      params
-    ).toString()}`;
+    const fullURL = url
+      ? url
+      : `${baseURL}/${path}?${new URLSearchParams(params).toString()}`;
     const requestParams = {
       ...extra,
       method,
@@ -198,9 +204,11 @@ export class ThrottledApiClient extends ApiClient implements IApiClient {
 }
 
 export const apiURL =
-  process.env.REACT_APP_API_URL || `${window.location.origin}/api/v1`;
+  import.meta.env.VITE_API_URL || `${window.location.origin}/api/v1`;
 export const staticURL =
-  process.env.REACT_APP_STATIC_URL || window.location.origin;
+  import.meta.env.VITE_STATIC_URL !== undefined
+    ? import.meta.env.VITE_STATIC_URL
+    : window.location.origin;
 
 const apiClient: IApiClient = new ApiClient();
 apiClient.setBaseURL(apiURL);

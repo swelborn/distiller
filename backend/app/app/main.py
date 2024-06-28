@@ -1,12 +1,12 @@
 import sentry_sdk
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
 from app.api.api_v1.api import api_router
 from app.core.config import settings
 from app.core.logging import logger
+from app.core.security import AuthStaticFiles
 from app.kafka import producer
 
 app = FastAPI(
@@ -42,8 +42,9 @@ if settings.BACKEND_CORS_ORIGINS:
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
 app.mount(
     settings.IMAGE_URL_PREFIX,
-    StaticFiles(directory=settings.IMAGE_STATIC_DIR),
+    AuthStaticFiles(directory=settings.IMAGE_STATIC_DIR),
     name="image",
 )

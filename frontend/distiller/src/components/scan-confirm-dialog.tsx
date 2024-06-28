@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 
+import WarningIcon from '@mui/icons-material/Warning';
 import {
   Button,
   Dialog,
@@ -10,13 +11,11 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
-import WarningIcon from '@mui/icons-material/Warning';
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormGroup from '@mui/material/FormGroup';
+import { styled } from '@mui/material/styles';
 import { isNil } from 'lodash';
-
 import { Scan, ScanLocation } from '../types';
 
 const DialogTitleWarningText = styled(DialogTitle)(({ theme }) => ({
@@ -74,11 +73,26 @@ const ScanConfirmDialog: React.FC<ScanConfirmDialogProps> = (props) => {
   // The id to use for confirmation
   const id = !isNil(scan.scan_id) ? scan.scan_id : scan.id;
 
+  const onKeyDown = (ev: React.KeyboardEvent<HTMLDivElement>) => {
+    if (ev.key !== 'Enter') {
+      return;
+    }
+
+    if (id !== enteredScanID) {
+      return;
+    }
+
+    onConfirmClick();
+  };
+
   return (
     <Dialog
       open={scan !== null}
       onClose={onCancelClick}
       aria-labelledby="confirm-title"
+      // disableRestoreFocus ensures the autofocus on the text
+      // field works: https://github.com/mui/material-ui/issues/33004
+      disableRestoreFocus
     >
       <DialogTitleWarningText id="confirm-title">
         <WarningIcon />
@@ -97,8 +111,10 @@ const ScanConfirmDialog: React.FC<ScanConfirmDialogProps> = (props) => {
           label={idLabel}
           value={enteredScanID}
           onChange={(ev) => setEnteredScanID(parseInt(ev.target.value))}
+          onKeyDown={onKeyDown}
           type="number"
           variant="standard"
+          autoFocus
         />
       </DialogContent>
       <DialogActions>
@@ -138,7 +154,7 @@ export const ScanDeleteConfirmDialog: React.FC<BaseProps> = (props) => {
 
   const handleRemoveScanFilesChange = (
     event: React.ChangeEvent<HTMLInputElement>,
-    checked: boolean
+    checked: boolean,
   ) => {
     setRemoveScanFiles(checked);
   };

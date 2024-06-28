@@ -69,10 +69,27 @@ sync_events_topic = app.topic(TOPIC_STATUS_FILE_SYNC_EVENTS, value_type=SyncEven
 class ScanStatus(faust.Record, coerce=True):
     created: Optional[str] = None
     uuid: Optional[str] = None
-    progress: Optional[int] = None
     host: Optional[str] = None
-    paths: List[str] = []
+    paths: List[str] = None
+    # map of path to progress for receiver
+    progress_by_path: Dict[str, int] = None
     modified: Optional[datetime] = None
+
+    # We have to initialize the list and dict in __post_init__ as unlike
+    # pydantic, faust does not deal with mutable default values!
+    def __post_init__(self):
+        if self.paths is None:
+            self.paths = []
+
+        if self.progress_by_path is None:
+            self.progress_by_path = {}
+
+    def progress(self):
+        try:
+            return round(sum(self.progress_by_path.values()) / 4)
+        except OverflowError:
+            logger.warning("Overflow error processing progress.")
+            return 100
 
 
 # native scan id to distiller id
@@ -105,7 +122,7 @@ def purge_scan_data(scan_id):
 
 
 def reap_scan_metadata():
-    for (key, record) in scan_id_to_metadata.items():
+    for key, record in scan_id_to_metadata.items():
         expiration = timedelta(hours=1)
         now = datetime.utcnow()
         if now - record.created > expiration:
@@ -113,7 +130,7 @@ def reap_scan_metadata():
 
 
 def reap_scan_status():
-    for (key, record) in scan_id_to_status.items():
+    for key, record in scan_id_to_status.items():
         expiration = timedelta(hours=1)
         now = datetime.utcnow()
         if (
@@ -177,13 +194,14 @@ async def process_status_file(
     # First update the scan status in our table
     scan_status = scan_id_to_status[scan_id]
     scan_status.modified = datetime.utcnow()
-    if scan_status.progress is None or scan_status.progress < status_file.progress:
-        try:
-            scan_status.progress = round(status_file.progress)
-        except OverflowError:
-            logger.warning("Overflow error processing progress, skipping process file.")
-            return
+
+    if (
+        path not in scan_status.progress_by_path
+        or scan_status.progress_by_path[path] < status_file.progress
+    ):
+        scan_status.progress_by_path[path] = status_file.progress
         progress_updated = True
+
     scan_status.host = event.host
     paths = set(scan_status.paths)
     paths.add(path)
@@ -232,7 +250,7 @@ async def process_status_file(
                     scan_id=scan_id,
                     uuid=scan_status.uuid,
                     created=scan_status.created,
-                    progress=scan_status.progress,
+                    progress=scan_status.progress(),
                     locations=locations,
                     metadata=metadata,
                 ),
@@ -262,7 +280,7 @@ async def process_status_file(
                 session,
                 ScanUpdate(
                     id=distiller_id,
-                    progress=scan_status.progress,
+                    progress=scan_status.progress(),
                     locations=locations,
                 ),
             )
@@ -273,8 +291,8 @@ async def process_status_file(
 
             raise
 
-    if (scan_status.progress == 100 and scan_create) or (
-        distiller_id is not None and progress_updated and scan_status.progress == 100
+    if (scan_status.progress() == 100 and scan_create) or (
+        distiller_id is not None and progress_updated and scan_status.progress() == 100
     ):
         logger.info(f"Transfer complete for scan {scan_id}")
 

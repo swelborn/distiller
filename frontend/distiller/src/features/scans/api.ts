@@ -1,32 +1,33 @@
-import { apiClient } from '../../client';
-import { IdType, Scan, ScansRequestResult } from '../../types';
-import { pickNil } from '../../utils';
+import { isNil } from 'lodash';
 import { DateTime } from 'luxon';
+import { apiClient } from '../../client';
+import { IdType, Job, Scan, ScansRequestResult } from '../../types';
+import { pickNil } from '../../utils';
 
 export function getScans(
   microscopeId: IdType,
   skip?: number,
   limit?: number,
   start?: DateTime,
-  end?: DateTime
+  end?: DateTime,
 ): Promise<ScansRequestResult> {
   const params: any = { microscope_id: microscopeId };
-  if (skip !== undefined) {
+  if (!isNil(skip)) {
     params['skip'] = skip;
   }
-  if (limit !== undefined) {
+  if (!isNil(limit)) {
     params['limit'] = limit;
   }
-  if (start !== undefined) {
+  if (!isNil(start)) {
     params['start'] = start;
   }
-  if (end !== undefined) {
+  if (!isNil(end)) {
     params['end'] = end;
   }
 
   return apiClient
     .get({
-      url: 'scans',
+      path: 'scans',
       params,
     })
     .then((res) => {
@@ -53,27 +54,39 @@ export function getScans(
 export function getScan(id: IdType): Promise<Scan> {
   return apiClient
     .get({
-      url: `scans/${id}`,
+      path: `scans/${id}`,
     })
     .then((res) => {
       return res.json().then((scan: Scan) => {
         let prevScanId: any = pickNil(
           res.headers.get('x-previous-scan'),
-          undefined
+          undefined,
         );
         let nextScanId: any = pickNil(
           res.headers.get('x-next-scan'),
-          undefined
+          undefined,
         );
         return { ...scan, prevScanId, nextScanId };
       });
     });
 }
 
+export function getScanJobs(id: IdType): Promise<Job[]> {
+  const params: any = {};
+  params['scan_id'] = id;
+
+  return apiClient
+    .get({
+      path: `jobs`,
+      params,
+    })
+    .then((res) => res.json());
+}
+
 export function patchScan(id: IdType, updates: Partial<Scan>): Promise<Scan> {
   return apiClient
     .patch({
-      url: `scans/${id}`,
+      path: `scans/${id}`,
       json: updates,
     })
     .then((res) => res.json());
@@ -82,7 +95,7 @@ export function patchScan(id: IdType, updates: Partial<Scan>): Promise<Scan> {
 export function removeScanFiles(id: IdType, host: string): Promise<void> {
   return apiClient
     .put({
-      url: `scans/${id}/remove`,
+      path: `scans/${id}/remove`,
       params: { host },
     })
     .then((_) => undefined);
@@ -90,11 +103,11 @@ export function removeScanFiles(id: IdType, host: string): Promise<void> {
 
 export function removeScan(
   id: IdType,
-  removeScanFiles: boolean
+  removeScanFiles: boolean,
 ): Promise<void> {
   return apiClient
     .delete({
-      url: `scans/${id}`,
+      path: `scans/${id}`,
       params: { remove_scan_files: removeScanFiles },
     })
     .then((_) => undefined);

@@ -1,25 +1,31 @@
 import {
-  createAsyncThunk,
-  createSlice,
+  AnyAction,
   PayloadAction,
   ThunkDispatch,
-  AnyAction,
+  createAsyncThunk,
+  createSlice,
 } from '@reduxjs/toolkit';
 
 import { apiClient } from '../../client';
-import { startMockNotifications } from './mock';
+import { setJob, updateJob } from '../jobs';
+import { updateMicroscope } from '../microscopes';
 import {
+  createScanFromNotification,
+  updateScanFromNotification,
+} from '../scans';
+import {
+  isJobSubmitEvent,
+  isJobUpdatedEvent,
   isMicroscopeUpdatedEvent,
   isScanCreatedEvent,
   isScanUpdatedEvent,
 } from './events';
-import { setScan, updateScan } from '../scans';
-import { updateMicroscope } from '../microscopes';
+import { startMockNotifications } from './mock';
 
 class NotificationHub {
   constructor(
     ws: WebSocket,
-    dispatch: ThunkDispatch<unknown, unknown, AnyAction>
+    dispatch: ThunkDispatch<unknown, unknown, AnyAction>,
   ) {
     const messageListener = (ev: MessageEvent<string>) => {
       let msg: any = undefined;
@@ -28,12 +34,17 @@ class NotificationHub {
       } catch {}
 
       if (isScanCreatedEvent(msg)) {
-        const scan = { ...msg, jobs: [] };
-        dispatch(setScan(scan));
+        const scan = { ...msg, job_ids: [] };
+        dispatch(createScanFromNotification(scan));
       } else if (isScanUpdatedEvent(msg)) {
-        dispatch(updateScan(msg));
+        dispatch(updateScanFromNotification(msg));
       } else if (isMicroscopeUpdatedEvent(msg)) {
         dispatch(updateMicroscope(msg));
+      } else if (isJobSubmitEvent(msg)) {
+        const { job } = { ...msg };
+        dispatch(setJob(job));
+      } else if (isJobUpdatedEvent(msg)) {
+        dispatch(updateJob(msg));
       }
     };
 
@@ -63,18 +74,18 @@ export const connectNotifications = createAsyncThunk<void, ConnectPayload>(
     const { microscopeID } = payload;
 
     let ws: WebSocket = await apiClient.ws({
-      url: 'notifications',
+      path: 'notifications',
       params: { microscope_id: microscopeID },
     });
 
     notificationHub = new NotificationHub(ws, dispatch);
 
-    const mock = process.env.NODE_ENV === 'development';
+    const mock = import.meta.env.DEV;
 
     if (mock) {
       startMockNotifications(ws);
     }
-  }
+  },
 );
 
 export const notificationsSlice = createSlice({

@@ -4,14 +4,14 @@ import { Notebook } from '../../types';
 export function getNotebooks(): Promise<string[]> {
   return apiClient
     .get({
-      url: `notebooks`,
+      path: `notebooks`,
     })
     .then((res) => res.json());
 }
 
 export function fetchOrCreateNotebook(
   name: string,
-  scanId: number
+  scanId: number,
 ): Promise<Notebook> {
   const payload = {
     name,
@@ -20,7 +20,7 @@ export function fetchOrCreateNotebook(
 
   return apiClient
     .post({
-      url: 'notebooks',
+      path: 'notebooks',
       json: payload,
     })
     .then((res) => res.json());

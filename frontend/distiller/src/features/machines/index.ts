@@ -1,13 +1,13 @@
 import {
   createAsyncThunk,
-  createSlice,
   createEntityAdapter,
+  createSlice,
 } from '@reduxjs/toolkit';
 import { RootState } from '../../app/store';
-import { getMachines as getMachinesAPI } from './api';
 import { Machine } from '../../types';
+import { getMachines as getMachinesAPI } from './api';
 
-export const machinesAdapter = createEntityAdapter<Machine>({
+export const machinesAdapter = createEntityAdapter<Machine, string>({
   selectId: (machine) => machine.name,
   sortComparer: (a, b) => a.name.localeCompare(b.name),
 });
@@ -31,7 +31,7 @@ export const getMachines = createAsyncThunk<Machine[]>(
       status: 'unknown',
       notes: [],
     }));
-  }
+  },
 );
 
 export const getMachineState = createAsyncThunk<Machine, Machine>(
@@ -41,7 +41,7 @@ export const getMachineState = createAsyncThunk<Machine, Machine>(
     const { status, notes } = result;
 
     return { ...payload, status, notes };
-  }
+  },
 );
 
 export const machinesSlice = createSlice({

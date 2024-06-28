@@ -1,5 +1,6 @@
 import React from 'react';
 
+import ContentCopy from '@mui/icons-material/ContentCopy';
 import {
   Chip,
   Grid,
@@ -9,14 +10,11 @@ import {
   Typography,
   tooltipClasses,
 } from '@mui/material';
-
-import { ScanLocation, Scan } from '../types';
-
+import { styled } from '@mui/material/styles';
+import { isNil } from 'lodash';
 import { useAppDispatch } from '../app/hooks';
 import { removeScanFiles } from '../features/scans';
-import { isNil } from 'lodash';
-import ContentCopy from '@mui/icons-material/ContentCopy';
-import { styled } from '@mui/material/styles';
+import { Scan, ScanLocation } from '../types';
 import { stopPropagation } from '../utils';
 
 type Props = {
@@ -24,6 +22,7 @@ type Props = {
   locations: ScanLocation[];
   confirmRemoval: (scan: Scan) => Promise<boolean>;
   machines: string[];
+  allowDeletion?: boolean;
 };
 
 type UniqueLocation = {
@@ -35,6 +34,7 @@ type ChipProps = {
   scan: Scan;
   host: string;
   machines: string[];
+  allowDeletion?: boolean;
 
   confirmRemoval: (scan: Scan) => Promise<boolean>;
 };
@@ -44,8 +44,11 @@ const LocationChip: React.FC<ChipProps> = React.forwardRef<
   ChipProps
 >((props, ref) => {
   const dispatch = useAppDispatch();
-  const { scan, host, confirmRemoval, machines } = props;
-  const [deletable, setDeletable] = React.useState(!isNil(scan.scan_id));
+  const { scan, host, machines, allowDeletion = true } = props;
+  const { confirmRemoval, ...otherProps } = props;
+  const [deletable, setDeletable] = React.useState(
+    !isNil(scan.scan_id) && allowDeletion,
+  );
 
   const onDelete = async () => {
     if (scan === undefined) {
@@ -62,7 +65,7 @@ const LocationChip: React.FC<ChipProps> = React.forwardRef<
 
   return (
     <Chip
-      {...props}
+      {...otherProps}
       ref={ref}
       label={host}
       onDelete={deletable && !machines.includes(host) ? onDelete : undefined}
@@ -111,17 +114,20 @@ const NoWrapTooltip = styled(({ className, ...props }: TooltipProps) => (
 });
 
 const LocationComponent: React.FC<Props> = (props, ref) => {
-  const { locations, machines } = props;
+  const { locations, machines, allowDeletion } = props;
   const uniqueLocations: UniqueLocation[] = Object.values(
-    locations.reduce((locs, location) => {
-      const { host, path } = location;
-      if (locs[host] === undefined) {
-        locs[host] = { host, paths: [] };
-      }
-      locs[host].paths.push(path);
+    locations.reduce(
+      (locs, location) => {
+        const { host, path } = location;
+        if (locs[host] === undefined) {
+          locs[host] = { host, paths: [] };
+        }
+        locs[host].paths.push(path);
 
-      return locs;
-    }, {} as { [host: string]: UniqueLocation })
+        return locs;
+      },
+      {} as { [host: string]: UniqueLocation },
+    ),
   );
 
   return (
@@ -148,6 +154,7 @@ const LocationComponent: React.FC<Props> = (props, ref) => {
                 host={location.host}
                 confirmRemoval={props.confirmRemoval}
                 machines={machines}
+                allowDeletion={allowDeletion}
               />
             </NoWrapTooltip>
           </Grid>

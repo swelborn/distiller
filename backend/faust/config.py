@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     SFAPI_PRIVATE_KEY: str
     SFAPI_GRANT_TYPE: str
     SFAPI_USER: str
+    SFAPI_SUBMIT_TIME_FORMAT: str
+    SFAPI_TZ: str
 
     ACQUISITION_USER: str
     JOB_COUNT_SCRIPT_PATH: str
@@ -26,10 +28,13 @@ class Settings(BaseSettings):
     JOB_MACHINE_OVERRIDES_PATH: Optional[str]
 
     IMAGE_UPLOAD_DIR: str
+    IMAGE_FORMAT: str = "jpeg"
+    IMAGE_QUALITY: Optional[int] = 90
     HAADF_IMAGE_UPLOAD_DIR_EXPIRATION_HOURS: int
     HAADF_NCEMHUB_DM4_DATA_PATH: str
     NCEMHUB_PATH: str
     NCEMHUB_DATA_PATH: str
+    STREAMING_CONFIG_FILEPATH: Optional[str]
 
     # Max age a scan can be to still have a HAADF metadata associated with it (hours)
     # This is need to avoid associate a metadata with a old scan if the scan ids

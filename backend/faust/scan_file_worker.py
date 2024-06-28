@@ -23,8 +23,7 @@ from constants import (DATE_DIR_FORMAT, NERSC_LOCATION,
                        TOPIC_SCAN_METADATA_EVENTS)
 from faust_records import ScanMetadata
 from schemas import Location
-from utils import (ScanUpdate, generate_ncemhub_scan_path,
-                   get_microscope_by_id, get_scan, update_scan)
+from utils import ScanUpdate, generate_ncemhub_scan_path, get_scan, update_scan
 
 DATA_FILE_FORMATS = [".dm3", ".dm4", ".ser", ".emd"]
 
@@ -35,6 +34,7 @@ logger.setLevel(logging.INFO)
 app = faust.App(
     "distiller-haadf", store="rocksdb://", broker=settings.KAFKA_URL, topic_partitions=1
 )
+
 
 # 4D Scan associated HAADF DM4
 class HaadfEvent(faust.Record):
@@ -71,12 +71,18 @@ async def generate_image_from_data(
 
     path = AsyncPath(tmp_dir) / image_filename
 
+    format = settings.IMAGE_FORMAT
+    pil_kwargs = {}
+
+    if settings.IMAGE_QUALITY is not None:
+        pil_kwargs["quality"] = settings.IMAGE_QUALITY
+
     # Work around issue with how faust resets sys.stdout to an instance of FileLogProxy
     # which doesn't have the property buffer, which is check by Pillow when its writing
     # out the image, so just reset it to the real stdout while calling imsave.
     stdout = sys.stdout
     sys.stdout = sys.__stdout__
-    plt.imsave(str(path), img)
+    plt.imsave(str(path), img, format=format, pil_kwargs=pil_kwargs)
     sys.stdout = stdout
 
     return path
@@ -141,11 +147,12 @@ async def generate_ncemhub_scan_file_path(
     stop=tenacity.stop_after_attempt(10),
 )
 async def upload_haadf_image(session: aiohttp.ClientSession, path: AsyncPath):
+    format = settings.IMAGE_FORMAT
     # Now upload
     async with path.open("rb") as fp:
         headers = {settings.API_KEY_NAME: settings.API_KEY}
         data = aiohttp.FormData()
-        data.add_field("file", fp, filename=path.name, content_type="image/png")
+        data.add_field("file", fp, filename=path.name, content_type=f"image/{format}")
 
         return await session.post(
             f"{settings.API_URL}/files/haadf", headers=headers, data=data
@@ -170,38 +177,40 @@ def clean_metadata(md):
 def extract_dm_metadata(dm_path: str):
     metadata = {}
 
+    GOOD_KEYS = [
+        "Calibrations",
+        "Acquisition",
+        "DataBar",
+        "EELS",
+        "Meta Data",
+        "Microscope Info",
+        "Session Info",
+        "4Dcamera",
+        "DigiScan",
+        "Dimensions",
+    ]
+
     # Use on_memory=False for now as it doesn't seem to work on spin
     with dm.fileDM(dm_path, on_memory=False) as dm_file:
         # Save most useful metadata
-
-        # Only keep the most useful tags as meta data
-        for key, value in dm_file.allTags.items():
-            # Most useful starting tags
-            image_tags_prefix = f"ImageList.{dm_file.numObjects}.ImageTags."
-            image_data_prefix = f"ImageList.{dm_file.numObjects}.ImageData."
-            image_tags_index = key.find(image_tags_prefix)
-            image_data_index = key.find(image_data_prefix)
-            if image_tags_index > -1:
-                sub = key[image_tags_index + len(image_tags_prefix) :]
-                metadata[sub] = value
-            elif image_data_index > -1:
-                sub = key[image_data_index + len(image_data_prefix) :]
-                metadata[sub] = value
-
-            # Remove unneeded keys
-            remove_patterns = [
-                "frame sequence",
-                "Private",
-                "Reference Images",
-                "Frame.Intensity",
-                "Area.Transform",
-                "Parameters.Objects",
-                "Device.Parameters",
-            ]
-            for key in list(metadata):
-                for remove_pattern in remove_patterns:
-                    if key.find(remove_pattern) > -1:
-                        del metadata[key]
+        for tag_key, tag_value in dm_file.allTags.items():
+            if any(x in tag_key for x in GOOD_KEYS):
+                tag_key_split = tag_key.split(".")
+                if "DigiScan" in tag_key:
+                    if "Rotation" in tag_key:
+                        new_key = " ".join(tag_key_split[4:])
+                        metadata[new_key] = tag_value
+                elif "Session Info" in tag_key:
+                    if "Label" in tag_key_split[-1]:
+                        label = tag_value
+                        value_key_split = tag_key_split.copy()
+                        value_key_split[-1] = "Value"
+                        value_key = ".".join(value_key_split)
+                        if value_key in dm_file.allTags:
+                            metadata[label] = dm_file.allTags[value_key]
+                else:
+                    new_key = " ".join(tag_key_split[4:])
+                    metadata[new_key] = tag_value
 
         # Store the X and Y pixel size, offset and unit
         try:
@@ -265,7 +274,6 @@ def extract_emi_metadata(emi_path: str):
 
 
 def extract_ncem_emd_metadata(emd_file):
-
     metadata = {}
 
     try:
@@ -389,6 +397,7 @@ async def send_scan_metadata(session: aiohttp.ClientSession, scan_id: int, path:
 
 @app.agent(haadf_events_topic)
 async def watch_for_haadf_events(haadf_events):
+    format = settings.IMAGE_FORMAT
     async with aiohttp.ClientSession() as session:
         async for event in haadf_events:
             path = event.path
@@ -397,7 +406,7 @@ async def watch_for_haadf_events(haadf_events):
                 await copy_file_to_ncemhub(
                     AsyncPath(path), AsyncPath(settings.HAADF_NCEMHUB_DM4_DATA_PATH)
                 )
-                image_path = await generate_image(tmp, path, f"{scan_id}.png")
+                image_path = await generate_image(tmp, path, f"{scan_id}.{format}")
                 r = await upload_haadf_image(session, image_path)
                 r.raise_for_status()
 
@@ -417,11 +426,12 @@ async def watch_for_haadf_events(haadf_events):
     stop=tenacity.stop_after_attempt(10),
 )
 async def upload_image(session: aiohttp.ClientSession, id: int, path: AsyncPath):
+    format = settings.IMAGE_FORMAT
     # Now upload
     async with path.open("rb") as fp:
         headers = {settings.API_KEY_NAME: settings.API_KEY}
         data = aiohttp.FormData()
-        data.add_field("file", fp, filename=path.name, content_type="image/png")
+        data.add_field("file", fp, filename=path.name, content_type=f"image/{format}")
 
         return await session.put(
             f"{settings.API_URL}/scans/{id}/image", headers=headers, data=data
@@ -435,7 +445,7 @@ scan_file_events_topic = app.topic(
 
 @app.agent(scan_file_events_topic)
 async def watch_for_scan_file_events(scan_file_events):
-
+    format = settings.IMAGE_FORMAT
     async with aiohttp.ClientSession() as session:
         async for event in scan_file_events:
             path = event.path
@@ -453,7 +463,9 @@ async def watch_for_scan_file_events(scan_file_events):
 
                     if Path(path).suffix in DATA_FILE_FORMATS:
                         try:
-                            image_path = await generate_image(tmp, path, f"{id}.png")
+                            image_path = await generate_image(
+                                tmp, path, f"{id}.{format}"
+                            )
                         except Exception:
                             logger.exception("Exception generating image.")
                             raise

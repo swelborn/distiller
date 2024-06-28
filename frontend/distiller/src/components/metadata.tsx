@@ -1,19 +1,17 @@
 import React from 'react';
 
-import {
-  Grid,
-  Table,
-  TableRow,
-  TableBody,
-  TableCell,
-  Collapse,
-  Button,
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
-
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-
+import {
+  Button,
+  Collapse,
+  Grid,
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
 import { Metadata, Scan } from '../types';
 
 // Search for patterns of the form <prefix><number><suffix> or <prefix><X or Y><suffix>
@@ -92,7 +90,7 @@ const AdvancedMetadata: React.FC<AdvancedMetadataProps> = (props) => {
               }
               onClick={() => setOpen(!open)}
             >
-              Advanced
+              Metadata
             </Button>
           </Grid>
         </TableAdvancedHeaderCell>
@@ -109,7 +107,7 @@ const AdvancedMetadata: React.FC<AdvancedMetadataProps> = (props) => {
                       {
                         JSON.stringify(metadata[key]).replace(
                           /^"(.*)"$/,
-                          '$1'
+                          '$1',
                         ) /* strip outer quotes */
                       }
                     </TableAdvancedValueCell>
@@ -138,7 +136,7 @@ const MetadataComponent: React.FC<MetadataComponentProps> = (props) => {
           <React.Fragment>
             <TableRow>
               <TableNameCell>Size</TableNameCell>
-              <TableCell align="right">{`${scan.metadata['Dimensions.1']} x ${scan.metadata['Dimensions.2']}`}</TableCell>
+              <TableCell align="right">{`${scan.metadata['Dimensions 1']} x ${scan.metadata['Dimensions 2']}`}</TableCell>
             </TableRow>
           </React.Fragment>
         )}
